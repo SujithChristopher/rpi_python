@@ -7,12 +7,9 @@ import socket
 import toml
 import os
 
-
-
-
 ARUCO_PARAMETERS = aruco.DetectorParameters()
 ARUCO_PARAMETERS.useAruco3Detection = 1
-ARUCO_PARAMETERS.cornerRefinementMethod = 3
+ARUCO_PARAMETERS.cornerRefinementMethod = 2
 ARUCO_DICT = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
 detector = aruco.ArucoDetector(ARUCO_DICT, ARUCO_PARAMETERS)
 markerLength = 0.05
@@ -95,7 +92,7 @@ class MainClass:
         main = {'format': 'YUV420', 'size': (WIDTH, HEIGHT)}
         _c = {
             "FrameRate": 100,
-            # 'ExposureTime':500
+            'ExposureTime':1000
         }
         config = self.picam2.create_video_configuration(main, controls=_c, transform=libcamera.Transform(vflip=1))
         self.picam2.configure(config)
