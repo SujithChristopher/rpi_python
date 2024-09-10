@@ -24,7 +24,7 @@ detector = aruco.ArucoDetector(ARUCO_DICT, ARUCO_PARAMETERS)
 markerLength = 0.05
 markerSeperation = 0.01
 
-frame_size = (1200,800)
+frame_size = (1200, 800)
 
 board = aruco.GridBoard(
     size=[1, 1],
@@ -50,13 +50,15 @@ class RecordData:
         # main = {"size": frame_size}
         WIDTH = frame_size[0]
         HEIGHT = frame_size[1]
-        main = {'format': 'YUV420', 'size': (WIDTH, HEIGHT)}
+        main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
         _c = {
             "FrameRate": 120,
             # 'ExposureTime':500
         }
 
-        config = self.picam2.create_video_configuration(main, controls=_c, transform=libcamera.Transform(vflip=1))
+        config = self.picam2.create_video_configuration(
+            main, controls=_c, transform=libcamera.Transform(vflip=1)
+        )
         self.picam2.configure(config)
         self.picam2.start()
 
@@ -86,7 +88,7 @@ class RecordData:
         first_frame = True
 
         prev_frame_time = 0
-  
+
         new_frame_time = 0
         WIDTH = frame_size[0]
         HEIGHT = frame_size[1]
@@ -104,10 +106,9 @@ class RecordData:
             # print(gray_image.shape)
             frame = aruco.drawDetectedMarkers(gray_image, corners, ids)
 
-
-            new_frame_time = time.time() 
-            fps = 1/(new_frame_time-prev_frame_time) 
-            prev_frame_time = new_frame_time 
+            new_frame_time = time.time()
+            fps = 1 / (new_frame_time - prev_frame_time)
+            prev_frame_time = new_frame_time
             print(fps)
 
             if first_frame:
@@ -131,11 +132,11 @@ class RecordData:
                 sys.stdout.flush()
                 cv2.waitKey(1)
 
-            if keyboard.is_pressed('s'):
+            if keyboard.is_pressed("s"):
                 print("You Pressed a Key!, started recording from webcam")
                 self.start_recording = True
 
-            if keyboard.is_pressed('q'):
+            if keyboard.is_pressed("q"):
                 cv2.destroyAllWindows()
                 if self.record_camera:
                     _save_file.close()

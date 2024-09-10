@@ -26,7 +26,10 @@ board = aruco.GridBoard(
 
 frame_size = (1200, 800)
 
-def estimate_pose_single_markers(corners, marker_size, camera_matrix, distortion_coefficients):
+
+def estimate_pose_single_markers(
+    corners, marker_size, camera_matrix, distortion_coefficients
+):
     marker_points = np.array(
         [
             [-marker_size / 2, marker_size / 2, 0],
@@ -36,7 +39,7 @@ def estimate_pose_single_markers(corners, marker_size, camera_matrix, distortion
         ],
         dtype=np.float32,
     )
-    rvecs = []                                                
+    rvecs = []
     tvecs = []
     for corner in corners:
         _, r, t = cv2.solvePnP(
@@ -45,20 +48,22 @@ def estimate_pose_single_markers(corners, marker_size, camera_matrix, distortion
             camera_matrix,
             distortion_coefficients,
             True,
-            flags=cv2.SOLVEPNP_ITERATIVE
+            flags=cv2.SOLVEPNP_ITERATIVE,
         )
         if r is not None and t is not None:
             rvecs.append(r.reshape(1, 3).tolist())
             tvecs.append(t.reshape(1, 3).tolist())
     return np.array(rvecs, dtype=np.float32), np.array(tvecs, dtype=np.float32)
 
+
 # Camera Calibration
-_fish_params = toml.load('/home/sujith/Documents/programs/undistort_best.toml')
-_fish_matrix = np.array(_fish_params['calibration']['camera_matrix']).reshape(3, 3)
-_fish_dist = np.array(_fish_params['calibration']['dist_coeffs'])
+_fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
+_fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
+_fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
 map1, map2 = cv2.fisheye.initUndistortRectifyMap(
     _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, frame_size, cv2.CV_16SC2
 )
+
 
 class ExponentialMovingAverageFilter3D:
     def __init__(self, alpha):
@@ -69,6 +74,7 @@ class ExponentialMovingAverageFilter3D:
         self.ema = self.alpha * value + (1 - self.alpha) * self.ema
         return self.ema
 
+
 class MainClass:
     def __init__(self, cam_calib_path, udp_stream=False):
         self.UDP_STREAM = udp_stream
@@ -77,8 +83,8 @@ class MainClass:
         # Configure the camera
         config = self.picam2.create_video_configuration(
             {"format": "YUV420", "size": frame_size},
-            controls={"FrameRate": 100, 'ExposureTime':1000},
-            transform=libcamera.Transform(vflip=1)
+            controls={"FrameRate": 100, "ExposureTime": 1000},
+            transform=libcamera.Transform(vflip=1),
         )
         self.picam2.configure(config)
         self.picam2.start()
@@ -91,7 +97,9 @@ class MainClass:
         self.save_first_frame = False
 
         data = toml.load(cam_calib_path)
-        self.camera_matrix = np.array(data["calibration"]["camera_matrix"]).reshape(3, 3)
+        self.camera_matrix = np.array(data["calibration"]["camera_matrix"]).reshape(
+            3, 3
+        )
         self.distortion_coeff = np.array(data["calibration"]["dist_coeffs"])
 
         # EMA Filter
@@ -136,8 +144,18 @@ class MainClass:
                 pa_b_c = self.initial_rmat.T @ (pa_c - self.tv_origin)
                 transformed_tvecs.append(pa_b_c)
 
-        _rmat = cv2.Rodrigues(self.first_rvec)[0] if self.first_rvec is not None else np.eye(3)
-        self.tvec_dist = np.nanmedian([self.initial_rmat.T @ (pa_b_c - self.first_tvec.reshape(3, 1)) for pa_b_c in transformed_tvecs], axis=0).flatten()
+        _rmat = (
+            cv2.Rodrigues(self.first_rvec)[0]
+            if self.first_rvec is not None
+            else np.eye(3)
+        )
+        self.tvec_dist = np.nanmedian(
+            [
+                self.initial_rmat.T @ (pa_b_c - self.first_tvec.reshape(3, 1))
+                for pa_b_c in transformed_tvecs
+            ],
+            axis=0,
+        ).flatten()
         print(self.tvec_dist)
 
     def camera_thread(self):
@@ -166,33 +184,69 @@ class MainClass:
                     continue
 
             self.video_frame = self.picam2.capture_array()
-            self.video_frame = cv2.flip(self.video_frame[:frame_size[1], :frame_size[0]], 1)
-            self.video_frame = cv2.remap(self.video_frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+            self.video_frame = cv2.flip(
+                self.video_frame[: frame_size[1], : frame_size[0]], 1
+            )
+            self.video_frame = cv2.remap(
+                self.video_frame,
+                map1,
+                map2,
+                interpolation=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+            )
 
             if self.FIRST_FRAME:
-                corners, ids, rejected_corners = detector.detectMarkers(self.video_frame)
-                corners, ids, _, _ = detector.refineDetectedMarkers(
-                    self.video_frame, board, detectedCorners=corners, detectedIds=ids, rejectedCorners=rejected_corners
+                corners, ids, rejected_corners = detector.detectMarkers(
+                    self.video_frame
                 )
-                self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
+                corners, ids, _, _ = detector.refineDetectedMarkers(
+                    self.video_frame,
+                    board,
+                    detectedCorners=corners,
+                    detectedIds=ids,
+                    rejectedCorners=rejected_corners,
+                )
+                self.video_frame = aruco.drawDetectedMarkers(
+                    self.video_frame, corners, ids
+                )
                 if ids is not None:
                     self.first_rvec, self.first_tvec = estimate_pose_single_markers(
                         corners, markerLength, self.camera_matrix, self.distortion_coeff
                     )
                     self.FIRST_FRAME = False
             else:
-                corners, ids, rejected_corners = detector.detectMarkers(self.video_frame)
-                corners, ids, _, _ = detector.refineDetectedMarkers(
-                    self.video_frame, board, detectedCorners=corners, detectedIds=ids,
-                    cameraMatrix=self.camera_matrix, distCoeffs=self.distortion_coeff, rejectedCorners=rejected_corners
+                corners, ids, rejected_corners = detector.detectMarkers(
+                    self.video_frame
                 )
-                self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
-                if ids is not None and len(ids) > 0 and all(id in self.default_ids for id in ids):
+                corners, ids, _, _ = detector.refineDetectedMarkers(
+                    self.video_frame,
+                    board,
+                    detectedCorners=corners,
+                    detectedIds=ids,
+                    cameraMatrix=self.camera_matrix,
+                    distCoeffs=self.distortion_coeff,
+                    rejectedCorners=rejected_corners,
+                )
+                self.video_frame = aruco.drawDetectedMarkers(
+                    self.video_frame, corners, ids
+                )
+                if (
+                    ids is not None
+                    and len(ids) > 0
+                    and all(id in self.default_ids for id in ids)
+                ):
                     self.rvec, self.tvec = estimate_pose_single_markers(
                         corners, markerLength, self.camera_matrix, self.distortion_coeff
                     )
                     for _r, _t in zip(self.rvec, self.tvec):
-                        cv2.drawFrameAxes(self.video_frame, self.camera_matrix, self.distortion_coeff, _r, _t, markerLength / 2)
+                        cv2.drawFrameAxes(
+                            self.video_frame,
+                            self.camera_matrix,
+                            self.distortion_coeff,
+                            _r,
+                            _t,
+                            markerLength / 2,
+                        )
 
                     self.preprocess_ids(ids, self.rvec, self.tvec)
                     self.coordinate_transform()
@@ -209,20 +263,25 @@ class MainClass:
 
                     if self.UDP_STREAM:
                         try:
-                            data_to_send = f"{self.tvec_cm[0]},{self.tvec_cm[1]},{self.tvec_cm[2]}"
-                            self.udp_socket.sendto(data_to_send.encode('utf-8'), self.addr)
+                            data_to_send = (
+                                f"{self.tvec_cm[0]},{self.tvec_cm[1]},{self.tvec_cm[2]}"
+                            )
+                            self.udp_socket.sendto(
+                                data_to_send.encode("utf-8"), self.addr
+                            )
                         except Exception as e:
                             print(f"Error sending UDP data: {e}")
 
             resized_frame = cv2.resize(self.video_frame, (350, 200))
             cv2.imshow("frame", resized_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
         cv2.destroyAllWindows()
 
+
 # Example usage
 if __name__ == "__main__":
-    cam_calib_path = '/home/sujith/Documents/programs/undistort_best.toml'
+    cam_calib_path = "/home/sujith/Documents/programs/undistort_best.toml"
     main_class_instance = MainClass(cam_calib_path, udp_stream=False)
     main_class_instance.camera_thread()

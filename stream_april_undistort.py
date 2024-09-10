@@ -8,8 +8,6 @@ import toml
 import os
 
 
-
-
 ARUCO_PARAMETERS = aruco.DetectorParameters()
 ARUCO_PARAMETERS.useAruco3Detection = 1
 ARUCO_PARAMETERS.cornerRefinementMethod = 3
@@ -25,7 +23,8 @@ board = aruco.GridBoard(
     dictionary=ARUCO_DICT,
 )
 
-frame_size = (1200,800)
+frame_size = (1200, 800)
+
 
 def estimate_pose_single_markers(
     corners, marker_size, camera_matrix, distortion_coefficients
@@ -39,7 +38,7 @@ def estimate_pose_single_markers(
         ],
         dtype=np.float32,
     )
-    rvecs = []                                                
+    rvecs = []
     tvecs = []
     for corner in corners:
         _, r, t = cv2.solvePnP(
@@ -49,7 +48,7 @@ def estimate_pose_single_markers(
             distortion_coefficients,
             True,
             # flags=cv2.SOLVEPNP_IPPE_SQUARE,
-            flags=cv2.SOLVEPNP_ITERATIVE
+            flags=cv2.SOLVEPNP_ITERATIVE,
         )
         if r is not None and t is not None:
             r = np.array(r).reshape(1, 3).tolist()
@@ -58,30 +57,33 @@ def estimate_pose_single_markers(
             tvecs.append(t)
     return np.array(rvecs, dtype=np.float32), np.array(tvecs, dtype=np.float32)
 
-_fish_params = toml.load('/home/sujith/Documents/programs/undistort_best.toml')
-_fish_matrix = np.array(_fish_params['calibration']['camera_matrix']).reshape(3,3)
-_fish_dist = np.array(_fish_params['calibration']['dist_coeffs'])
-map1, map2 = cv2.fisheye.initUndistortRectifyMap(_fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200,800), cv2.CV_16SC2)
+
+_fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
+_fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
+_fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
+map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+    _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
+)
 
 
 class MainClass:
     def __init__(self, cam_calib_path, udp_stream=False):
         self.ar_pos = None
         self.UDP_STREAM = udp_stream
-        
 
         self.picam2 = Picamera2()
         WIDTH = frame_size[0]
         HEIGHT = frame_size[1]
-        main = {'format': 'YUV420', 'size': (WIDTH, HEIGHT)}
+        main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
         _c = {
             "FrameRate": 100,
             # 'ExposureTime':500
         }
-        config = self.picam2.create_video_configuration(main, controls=_c, transform=libcamera.Transform(vflip=1))
+        config = self.picam2.create_video_configuration(
+            main, controls=_c, transform=libcamera.Transform(vflip=1)
+        )
         self.picam2.configure(config)
         self.picam2.start()
-
 
         self.rvec = None
         self.tvec = None
@@ -243,11 +245,11 @@ class MainClass:
 
         _rmat = cv2.Rodrigues(self.first_rvec)[0]
 
-        _tr_12 = _rmat.T @ (pa_b_c_12 - self.first_tvec.reshape(3,1))
-        _tr_14 = _rmat.T @ (pa_b_c_14 - self.first_tvec.reshape(3,1))
-        _tr_20 = _rmat.T @ (pa_b_c_20 - self.first_tvec.reshape(3,1))
-        _tr_88 = _rmat.T @ (pa_b_c_88 - self.first_tvec.reshape(3,1))
-        _tr_89 = _rmat.T @ (pa_b_c_89 - self.first_tvec.reshape(3,1))
+        _tr_12 = _rmat.T @ (pa_b_c_12 - self.first_tvec.reshape(3, 1))
+        _tr_14 = _rmat.T @ (pa_b_c_14 - self.first_tvec.reshape(3, 1))
+        _tr_20 = _rmat.T @ (pa_b_c_20 - self.first_tvec.reshape(3, 1))
+        _tr_88 = _rmat.T @ (pa_b_c_88 - self.first_tvec.reshape(3, 1))
+        _tr_89 = _rmat.T @ (pa_b_c_89 - self.first_tvec.reshape(3, 1))
 
         self.tvec_dist = np.nanmedian(
             np.array([_tr_12, _tr_14, _tr_20, _tr_88, _tr_89]), axis=0
@@ -287,8 +289,13 @@ class MainClass:
 
             self.video_frame = cv2.flip(self.video_frame, 1)
             # self.video_frame = cv2.resize(self.video_frame, (1230,924))
-            self.video_frame = cv2.remap(self.video_frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-
+            self.video_frame = cv2.remap(
+                self.video_frame,
+                map1,
+                map2,
+                interpolation=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+            )
 
             if self.FIRST_FRAME:
                 corners, ids, rejectedpoints = detector.detectMarkers(self.video_frame)
@@ -302,7 +309,9 @@ class MainClass:
                     # distCoeffs=self.distortion_coeff,
                 )
                 # print(corners, self.video_frame.shape)
-                self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
+                self.video_frame = aruco.drawDetectedMarkers(
+                    self.video_frame, corners, ids
+                )
                 if ids is not None:
                     self.first_rvec, self.first_tvec = estimate_pose_single_markers(
                         corners, 0.05, self.camera_matrix, self.distortion_coeff
@@ -323,7 +332,9 @@ class MainClass:
                     cameraMatrix=self.camera_matrix,
                     distCoeffs=self.distortion_coeff,
                 )
-                self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
+                self.video_frame = aruco.drawDetectedMarkers(
+                    self.video_frame, corners, ids
+                )
                 if (ids is not None and len(ids) > 0) and all(
                     item in self.default_ids for item in np.array(ids)
                 ):
@@ -340,32 +351,41 @@ class MainClass:
                             _t,
                             0.05,
                         )
-                    
+
                     self.preprocess_ids(ids, self.rvec, self.tvec)
                     self.coordinate_transform()
 
                     # Check if this is the first vector
                     if self.first_vec:
-                        self.previous_vec = self.tvec_dist * 100  # Initialize previous vector
-                        self.current_vec = self.previous_vec       # Initialize current vector
-                        self.first_vec = False                     # Update the first_vec flag
+                        self.previous_vec = (
+                            self.tvec_dist * 100
+                        )  # Initialize previous vector
+                        self.current_vec = (
+                            self.previous_vec
+                        )  # Initialize current vector
+                        self.first_vec = False  # Update the first_vec flag
                     else:
-                        self.current_vec = self.tvec_dist * 100    # Update the current vector
+                        self.current_vec = (
+                            self.tvec_dist * 100
+                        )  # Update the current vector
                         norm = np.linalg.norm(self.current_vec - self.previous_vec)
-                        
+
                         # Set a threshold for jitter reduction
-                        if norm > 5:  # Adjust this threshold based on the specific context
-                            self.tvec_cm = self.previous_vec  # Use the previous vector if the change is too large
+                        if (
+                            norm > 5
+                        ):  # Adjust this threshold based on the specific context
+                            self.tvec_cm = (
+                                self.previous_vec
+                            )  # Use the previous vector if the change is too large
 
                         else:
-                            self.tvec_cm = self.current_vec   # Use the current vector otherwise
+                            self.tvec_cm = (
+                                self.current_vec
+                            )  # Use the current vector otherwise
                             self.previous_vec = self.current_vec
 
-
                         self.tvec_x = (
-                            str(-1 * self.tvec_cm[0])
-                            + ","
-                            + str(-1*self.tvec_cm[2])
+                            str(-1 * self.tvec_cm[0]) + "," + str(-1 * self.tvec_cm[2])
                         )
 
                         print(self.tvec_x)

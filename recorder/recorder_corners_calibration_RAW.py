@@ -36,10 +36,12 @@ board = aruco.GridBoard(
     dictionary=ARUCO_DICT,
 )
 
+
 @njit
 def convert_to_8bit(image):
-    image = image.astype(np.float32)/65535
-    return (image*255).astype(np.uint8)
+    image = image.astype(np.float32) / 65535
+    return (image * 255).astype(np.uint8)
+
 
 class RecordData:
     def __init__(
@@ -50,7 +52,12 @@ class RecordData:
         isColor=False,
     ):
         self.picam2 = Picamera2()
-        config = self.picam2.create_video_configuration(main={'size':self.picam2.sensor_modes[2]['size']},raw=self.picam2.sensor_modes[2], controls={'FrameRate':190, "ExposureValue":1}, transform=libcamera.Transform(vflip=1))
+        config = self.picam2.create_video_configuration(
+            main={"size": self.picam2.sensor_modes[2]["size"]},
+            raw=self.picam2.sensor_modes[2],
+            controls={"FrameRate": 190, "ExposureValue": 1},
+            transform=libcamera.Transform(vflip=1),
+        )
         self.picam2.configure(config)
 
         self.picam2.start()
@@ -81,24 +88,26 @@ class RecordData:
             )
         self.first_frame = True
         prev_frame_time = 0
-  
+
         new_frame_time = 0
 
         while True:
-            frame = self.picam2.capture_array('raw').view(np.uint16)
+            frame = self.picam2.capture_array("raw").view(np.uint16)
 
             gray_image = convert_to_8bit(frame)
 
-            new_frame_time = time.time() 
-            fps = 1/(new_frame_time-prev_frame_time) 
-            prev_frame_time = new_frame_time 
+            new_frame_time = time.time()
+            fps = 1 / (new_frame_time - prev_frame_time)
+            prev_frame_time = new_frame_time
             print(fps)
 
             corners, ids, rejected_image_points = detector.detectMarkers(gray_image)
             corners, ids, _, _ = detector.refineDetectedMarkers(
                 gray_image, board, corners, ids, rejected_image_points
             )
-            gray_image = aruco.drawDetectedMarkers(cv2.cvtColor(gray_image, cv2.COLOR_GRAY2RGB), corners, ids)
+            gray_image = aruco.drawDetectedMarkers(
+                cv2.cvtColor(gray_image, cv2.COLOR_GRAY2RGB), corners, ids
+            )
 
             if self.first_frame:
                 _packed_file = mp.packb(gray_image.shape, default=mpn.encode)
@@ -122,12 +131,11 @@ class RecordData:
                 sys.stdout.flush()
                 cv2.waitKey(1)
 
-            
-            if keyboard.is_pressed('s'):
+            if keyboard.is_pressed("s"):
                 print("You Pressed a Key!, started recording from webcam")
                 self.start_recording = True
 
-            if keyboard.is_pressed('q'):
+            if keyboard.is_pressed("q"):
                 if self.display:
                     cv2.destroyAllWindows()
                 if self.record_camera:
@@ -200,7 +208,5 @@ if __name__ == "__main__":
             os.makedirs(_pth)
     time.sleep(1)
 
-    record_data = RecordData(
-        _pth=_pth, record_camera=record_camera, isColor=True
-    )
+    record_data = RecordData(_pth=_pth, record_camera=record_camera, isColor=True)
     record_data.run()

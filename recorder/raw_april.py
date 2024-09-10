@@ -19,7 +19,9 @@ board = aruco.GridBoard(
 )
 
 picam2 = Picamera2()
-config = picam2.create_video_configuration(raw=picam2.sensor_modes[2], controls={'FrameRate':190})
+config = picam2.create_video_configuration(
+    raw=picam2.sensor_modes[2], controls={"FrameRate": 190}
+)
 picam2.configure(config)
 picam2.start()
 time.sleep(2)
@@ -27,10 +29,11 @@ prev_frame_time = 0
 
 new_frame_time = 0
 
+
 @njit
 def convert_to_8bit(image):
-    image = image.astype(np.float32)/65535
-    return (image*255).astype(np.uint8)
+    image = image.astype(np.float32) / 65535
+    return (image * 255).astype(np.uint8)
 
 
 while 1:
@@ -43,17 +46,14 @@ while 1:
     )
     # gray_image = aruco.drawDetectedMarkers(gray_image, corners, ids)
 
-
     # cv2.imshow('alsdkfj', img)
     # cv2.waitKey(1)
-
-
 
     # metadata = picam2.capture_metadata()
 
     # print(raw.shape)
 
-    new_frame_time = time.time() 
-    fps = 1/(new_frame_time-prev_frame_time) 
-    prev_frame_time = new_frame_time 
+    new_frame_time = time.time()
+    fps = 1 / (new_frame_time - prev_frame_time)
+    prev_frame_time = new_frame_time
     print(fps)

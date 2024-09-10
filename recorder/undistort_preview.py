@@ -9,23 +9,25 @@ import msgpack_numpy as mpn
 import os
 import time
 
-frame_size = (1200,800)
+frame_size = (1200, 800)
 
 picam2 = Picamera2()
 WIDTH = frame_size[0]
 HEIGHT = frame_size[1]
-main = {'format': 'YUV420', 'size': (WIDTH, HEIGHT)}
+main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
 _c = {
     "FrameRate": 120,
     # 'ExposureTime':500
 }
-config = picam2.create_video_configuration(main, controls=_c, transform=libcamera.Transform(vflip=1))
+config = picam2.create_video_configuration(
+    main, controls=_c, transform=libcamera.Transform(vflip=1)
+)
 picam2.configure(config)
-picam2.start() 
+picam2.start()
 
-_fish_params = toml.load(os.path.join(os.getcwd(), 'undistort_best.toml'))
-_fish_matrix = np.array(_fish_params['calibration']['camera_matrix']).reshape(3,3)
-_fish_dist = np.array(_fish_params['calibration']['dist_coeffs'])
+_fish_params = toml.load(os.path.join(os.getcwd(), "undistort_best.toml"))
+_fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
+_fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
 
 # chessboard_size = (6,4)
 
@@ -40,7 +42,9 @@ prev_frame_time = 0
 
 new_frame_time = 0
 
-map1, map2 = cv2.fisheye.initUndistortRectifyMap(_fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200,800), cv2.CV_16SC2)
+map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+    _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
+)
 
 
 while 1:
@@ -48,7 +52,13 @@ while 1:
     frame = cv2.flip(frame, 1)
 
     # frame = cv2.undistort(frame, _fish_matrix, _fish_dist)
-    frame = cv2.remap(frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    frame = cv2.remap(
+        frame,
+        map1,
+        map2,
+        interpolation=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+    )
     # print(frame.shape)
     # ret, corners = cv2.findChessboardCorners(frame, chessboard_size)
     # # print(ret)
@@ -58,25 +68,25 @@ while 1:
 
     _small_img = cv2.resize(frame, (250, 250))
 
-    new_frame_time = time.time() 
-    fps = 1/(new_frame_time-prev_frame_time) 
-    prev_frame_time = new_frame_time 
+    new_frame_time = time.time()
+    fps = 1 / (new_frame_time - prev_frame_time)
+    prev_frame_time = new_frame_time
     print(fps)
 
     if START_SAVING:
         packed = mp.packb(corners, default=mpn.encode)
         _file.write(packed)
 
-    if keyboard.is_pressed('s'):
+    if keyboard.is_pressed("s"):
         START_SAVING = True
-        print('started recording')
+        print("started recording")
 
-    if keyboard.is_pressed('q'):
+    if keyboard.is_pressed("q"):
         START_SAVING = False
-        print('stopped recording, ending camera')
+        print("stopped recording, ending camera")
         break
 
-    cv2.imshow('asdf', _small_img)
+    cv2.imshow("asdf", _small_img)
     cv2.waitKey(1)
 
 cv2.destroyAllWindows()

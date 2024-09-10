@@ -30,9 +30,10 @@ board = aruco.GridBoard(
     markerSeparation=markerSeperation,
     dictionary=ARUCO_DICT,
 )
-frame_size = (1280,800)
+frame_size = (1280, 800)
 WIDTH = frame_size[0]
 HEIGHT = frame_size[1]
+
 
 class RecordData:
     def __init__(
@@ -45,13 +46,14 @@ class RecordData:
     ):
         self.picam2 = Picamera2()
 
-
-        main = {'format': 'YUV420', 'size': (WIDTH, HEIGHT)}
+        main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
         _c = {
             "FrameRate": 120,
         }
 
-        config = self.picam2.create_video_configuration(main, controls=_c, transform=libcamera.Transform(vflip=1))
+        config = self.picam2.create_video_configuration(
+            main, controls=_c, transform=libcamera.Transform(vflip=1)
+        )
         self.picam2.configure(config)
         self.picam2.start()
 
@@ -101,7 +103,7 @@ class RecordData:
                     _packed_file = mp.packb([corners, ids], default=mpn.encode)
                     _save_file.write(_packed_file)
                 else:
-                    _packed_file = mp.packb([None, None], default=mpn.encode) 
+                    _packed_file = mp.packb([None, None], default=mpn.encode)
                     _save_file.write(_packed_file)
                 _time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                 _packed_timestamp = mp.packb([self.sync_line.get_value(), _time_stamp])
@@ -112,12 +114,12 @@ class RecordData:
                 cv2.imshow("webcam", gray_image_)
                 sys.stdout.flush()
                 cv2.waitKey(1)
-            
-            if keyboard.is_pressed('s'):
+
+            if keyboard.is_pressed("s"):
                 print("You Pressed a Key!, started recording from webcam")
                 self.start_recording = True
 
-            if keyboard.is_pressed('q'):
+            if keyboard.is_pressed("q"):
                 cv2.destroyAllWindows()
                 if self.record_camera:
                     _save_file.close()

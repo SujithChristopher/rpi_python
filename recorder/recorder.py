@@ -25,7 +25,9 @@ class RecordData:
     ):
         self.picam2 = Picamera2()
         # main = {"size": (1200, 480)}
-        main = {"size": (1640,1232),}
+        main = {
+            "size": (1640, 1232),
+        }
         _c = {
             "FrameRate": 40,
             # "AfMode": controls.AfModeEnum.Manual,

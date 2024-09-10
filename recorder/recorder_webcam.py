@@ -35,8 +35,6 @@ class RecordData:
 
         self.isColor = isColor
 
-
-
     def capture_webcam(self):
         """capture webcam"""
 

@@ -26,7 +26,7 @@ detector = aruco.ArucoDetector(ARUCO_DICT, ARUCO_PARAMETERS)
 markerLength = 0.05
 markerSeperation = 0.01
 
-frame_size = (1200,800)
+frame_size = (1200, 800)
 
 board = aruco.GridBoard(
     size=[1, 1],
@@ -35,11 +35,12 @@ board = aruco.GridBoard(
     dictionary=ARUCO_DICT,
 )
 
-_fish_params = toml.load(os.path.join(os.getcwd(), 'undistort_best.toml'))
-_fish_matrix = np.array(_fish_params['calibration']['camera_matrix']).reshape(3,3)
-_fish_dist = np.array(_fish_params['calibration']['dist_coeffs'])
-map1, map2 = cv2.fisheye.initUndistortRectifyMap(_fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200,800), cv2.CV_16SC2)
-
+_fish_params = toml.load(os.path.join(os.getcwd(), "undistort_best.toml"))
+_fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
+_fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
+map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+    _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
+)
 
 
 class RecordData:
@@ -58,13 +59,15 @@ class RecordData:
         # main = {"size": frame_size}
         WIDTH = frame_size[0]
         HEIGHT = frame_size[1]
-        main = {'format': 'YUV420', 'size': (WIDTH, HEIGHT)}
+        main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
         _c = {
             "FrameRate": 120,
             # 'ExposureTime':500
         }
 
-        config = self.picam2.create_video_configuration(main, controls=_c, transform=libcamera.Transform(vflip=1))
+        config = self.picam2.create_video_configuration(
+            main, controls=_c, transform=libcamera.Transform(vflip=1)
+        )
         self.picam2.configure(config)
         self.picam2.start()
 
@@ -94,7 +97,7 @@ class RecordData:
         first_frame = True
 
         prev_frame_time = 0
-  
+
         new_frame_time = 0
         WIDTH = frame_size[0]
         HEIGHT = frame_size[1]
@@ -103,7 +106,13 @@ class RecordData:
             frame = self.picam2.capture_array()
             gray_image = frame[:HEIGHT, :WIDTH]
 
-            gray_image = cv2.remap(gray_image, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+            gray_image = cv2.remap(
+                gray_image,
+                map1,
+                map2,
+                interpolation=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+            )
 
             gray_image = cv2.flip(gray_image, 1)
             # print(gray_image.shape)
@@ -115,10 +124,9 @@ class RecordData:
             # print(gray_image.shape)
             frame = aruco.drawDetectedMarkers(gray_image, corners, ids)
 
-
-            new_frame_time = time.time() 
-            fps = 1/(new_frame_time-prev_frame_time) 
-            prev_frame_time = new_frame_time 
+            new_frame_time = time.time()
+            fps = 1 / (new_frame_time - prev_frame_time)
+            prev_frame_time = new_frame_time
             print(fps)
 
             if first_frame:
@@ -142,11 +150,11 @@ class RecordData:
                 sys.stdout.flush()
                 cv2.waitKey(1)
 
-            if keyboard.is_pressed('s'):
+            if keyboard.is_pressed("s"):
                 print("You Pressed a Key!, started recording from webcam")
                 self.start_recording = True
 
-            if keyboard.is_pressed('q'):
+            if keyboard.is_pressed("q"):
                 cv2.destroyAllWindows()
                 if self.record_camera:
                     _save_file.close()
