@@ -10,7 +10,6 @@ try:
     from picamera2 import Picamera2
 except:
     WEBCAM = True
-    
 
 
 ARUCO_PARAMETERS = aruco.DetectorParameters()
@@ -121,7 +120,7 @@ class MainClass:
         self.FIRST_FRAME = True
         cam_calib_path = cam_calib_path
 
-        self.default_ids = [12, 88, 89, 14, 20]
+        self.default_ids = [4, 8, 12, 14, 20]
         self.received_message = ""
         self.stop_signal = False
 
@@ -178,15 +177,15 @@ class MainClass:
         self.does_not_exist = []
         for idx, id in enumerate(ids):
             match np.array(id):
+                case 4:
+                    self.tvec_04 = translation_vectors[idx][0]
+                    self.rvec_04 = rotation_vectors[idx][0]
+                case 8:
+                    self.tvec_08 = translation_vectors[idx][0]
+                    self.rvec_08 = rotation_vectors[idx][0]
                 case 12:
                     self.tvec_12 = translation_vectors[idx][0]
                     self.rvec_12 = rotation_vectors[idx][0]
-                case 88:
-                    self.tvec_88 = translation_vectors[idx][0]
-                    self.rvec_88 = rotation_vectors[idx][0]
-                case 89:
-                    self.tvec_89 = translation_vectors[idx][0]
-                    self.rvec_89 = rotation_vectors[idx][0]
                 case 14:
                     self.tvec_14 = translation_vectors[idx][0]
                     self.rvec_14 = rotation_vectors[idx][0]
@@ -208,15 +207,16 @@ class MainClass:
 
         for _d in self.does_not_exist:
             match np.array(_d):
+                
+                case 4:
+                    self.tvec_04 = np.nan
+                    self.rvec_04 = np.nan
+                case 8:
+                    self.tvec_08 = np.nan
+                    self.rvec_08 = np.nan
                 case 12:
                     self.tvec_12 = np.nan
                     self.rvec_12 = np.nan
-                case 88:
-                    self.tvec_88 = np.nan
-                    self.rvec_88 = np.nan
-                case 89:
-                    self.tvec_89 = np.nan
-                    self.rvec_89 = np.nan
                 case 14:
                     self.tvec_14 = np.nan
                     self.rvec_14 = np.nan
@@ -225,33 +225,34 @@ class MainClass:
                     self.rvec_20 = np.nan
 
     def coordinate_transform(self):
+        tv_04 = np.nan
+        tv_08 = np.nan
         tv_12 = np.nan
-        tv_88 = np.nan
-        tv_89 = np.nan
         tv_14 = np.nan
         tv_20 = np.nan
-
+        
+        rm_04 = np.eye(3)
+        rm_08= np.eye(3)
         rm_12 = np.eye(3)
-        rm_88 = np.eye(3)
-        rm_89 = np.eye(3)
         rm_14 = np.eye(3)
         rm_20 = np.eye(3)
 
+        id_04_offset = np.array([0.00, 0.0, -0.1075]).reshape(3, 1)
+        id_08_offset = np.array([0.1, 0.0, -0.055]).reshape(3, 1)
         id_12_offset = np.array([0.00, 0.0, -0.1075]).reshape(3, 1)
-        id_88_offset = np.array([0.00, 0.0, -0.1075]).reshape(3, 1)
-        id_89_offset = np.array([0.1, 0.0, -0.055]).reshape(3, 1)
         id_14_offset = np.array([-0.09, 0.0, -0.069]).reshape(3, 1)
         id_20_offset = np.array([0.1, 0.0, -0.069]).reshape(3, 1)
 
+
+        if self.tvec_04 is not np.nan:
+            tv_04 = np.array(self.tvec_04).reshape(3, 1)
+            rm_04 = cv2.Rodrigues(self.rvec_04)[0]
+        if self.tvec_08 is not np.nan:
+            tv_08 = np.array(self.tvec_08).reshape(3, 1)
+            rm_08 = cv2.Rodrigues(self.rvec_08)[0]
         if self.tvec_12 is not np.nan:
             tv_12 = np.array(self.tvec_12).reshape(3, 1)
             rm_12 = cv2.Rodrigues(self.rvec_12)[0]
-        if self.tvec_88 is not np.nan:
-            tv_88 = np.array(self.tvec_88).reshape(3, 1)
-            rm_88 = cv2.Rodrigues(self.rvec_88)[0]
-        if self.tvec_89 is not np.nan:
-            tv_89 = np.array(self.tvec_89).reshape(3, 1)
-            rm_89 = cv2.Rodrigues(self.rvec_89)[0]
         if self.tvec_14 is not np.nan:
             tv_14 = np.array(self.tvec_14).reshape(3, 1)
             rm_14 = cv2.Rodrigues(self.rvec_14)[0]
@@ -259,14 +260,14 @@ class MainClass:
             tv_20 = np.array(self.tvec_20).reshape(3, 1)
             rm_20 = cv2.Rodrigues(self.rvec_20)[0]
 
+        pa_c_04 = rm_04 @ id_04_offset + tv_04
+        pa_b_c_04 = self.initial_rmat.T @ (pa_c_04 - self.tv_origin)
+
+        pa_c_08 = rm_08 @ id_08_offset + tv_08
+        pa_b_c_08 = self.initial_rmat.T @ (pa_c_08 - self.tv_origin)
+
         pa_c_12 = rm_12 @ id_12_offset + tv_12
         pa_b_c_12 = self.initial_rmat.T @ (pa_c_12 - self.tv_origin)
-
-        pa_c_88 = rm_88 @ id_88_offset + tv_88
-        pa_b_c_88 = self.initial_rmat.T @ (pa_c_88 - self.tv_origin)
-
-        pa_c_89 = rm_89 @ id_89_offset + tv_89
-        pa_b_c_89 = self.initial_rmat.T @ (pa_c_89 - self.tv_origin)
 
         pa_c_14 = rm_14 @ id_14_offset + tv_14
         pa_b_c_14 = self.initial_rmat.T @ (pa_c_14 - self.tv_origin)
@@ -276,14 +277,15 @@ class MainClass:
 
         _rmat = cv2.Rodrigues(self.first_rvec)[0]
 
+        _tr_04 = _rmat.T @ (pa_b_c_04 - self.first_tvec.reshape(3, 1))
+        _tr_08 = _rmat.T @ (pa_b_c_08 - self.first_tvec.reshape(3, 1))
         _tr_12 = _rmat.T @ (pa_b_c_12 - self.first_tvec.reshape(3, 1))
         _tr_14 = _rmat.T @ (pa_b_c_14 - self.first_tvec.reshape(3, 1))
         _tr_20 = _rmat.T @ (pa_b_c_20 - self.first_tvec.reshape(3, 1))
-        _tr_88 = _rmat.T @ (pa_b_c_88 - self.first_tvec.reshape(3, 1))
-        _tr_89 = _rmat.T @ (pa_b_c_89 - self.first_tvec.reshape(3, 1))
+
 
         self.tvec_dist = np.nanmedian(
-            np.array([_tr_12, _tr_14, _tr_20, _tr_88, _tr_89]), axis=0
+            np.array([ _tr_04, _tr_08, _tr_12, _tr_14, _tr_20,]), axis=0
         )
 
         # print(self.tvec_dist)
@@ -455,7 +457,7 @@ if __name__ == "__main__":
 
     _file_path = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
 
-    _file_path = 'calib_undistort_aruco.toml'
+    # _file_path = 'calib_undistort_aruco.toml'
     print(_file_path)
 
     """
