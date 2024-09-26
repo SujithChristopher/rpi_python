@@ -455,7 +455,7 @@ if __name__ == "__main__":
 
     _file_path = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
 
-    _file_path = 'calib_undistort_aruco.toml'
+    # _file_path = 'calib_undistort_aruco.toml'
     print(_file_path)
 
     """

@@ -8,6 +8,7 @@ import os
 try:
     import libcamera
     from picamera2 import Picamera2
+    WEBCAM = False
 except:
     WEBCAM = True
 
@@ -62,8 +63,8 @@ def estimate_pose_single_markers(
     return np.array(rvecs, dtype=np.float32), np.array(tvecs, dtype=np.float32)
 
 
-# _fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
-_fish_params = toml.load("undistort_best.toml")
+_fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
+# _fish_params = toml.load("undistort_best.toml")
 _fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
 _fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
 map1, map2 = cv2.fisheye.initUndistortRectifyMap(
@@ -100,7 +101,7 @@ class MainClass:
             WIDTH = frame_size[0]
             HEIGHT = frame_size[1]
             main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-            _c = {"FrameRate": 100, "ExposureTime": 1000}
+            _c = {"FrameRate": 100, "ExposureTime": 5000}
             config = self.picam2.create_video_configuration(
                 main, controls=_c, transform=libcamera.Transform(vflip=1)
             )
@@ -237,8 +238,8 @@ class MainClass:
         rm_14 = np.eye(3)
         rm_20 = np.eye(3)
 
-        id_04_offset = np.array([0.00, 0.0, -0.1075]).reshape(3, 1)
-        id_08_offset = np.array([0.1, 0.0, -0.055]).reshape(3, 1)
+        id_04_offset = np.array([0.00, 0.1, -0.069]).reshape(3, 1)
+        id_08_offset = np.array([0.00, 0.01, -0.069]).reshape(3, 1)
         id_12_offset = np.array([0.00, 0.0, -0.1075]).reshape(3, 1)
         id_14_offset = np.array([-0.09, 0.0, -0.069]).reshape(3, 1)
         id_20_offset = np.array([0.1, 0.0, -0.069]).reshape(3, 1)
@@ -463,7 +464,7 @@ if __name__ == "__main__":
     """
     Check these parameters
     """
-    UDP_STREAM = False
+    UDP_STREAM = True
     CAMERA_CALIBRATION_FILE = _file_path
 
     """
