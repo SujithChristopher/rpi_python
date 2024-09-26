@@ -4,7 +4,8 @@ from cv2 import aruco
 import socket
 import toml
 import os
-
+import keyboard
+from numba import njit
 try:
     import libcamera
     from picamera2 import Picamera2
@@ -42,7 +43,7 @@ class ExponentialMovingAverageFilter3D:
     def __init__(self, alpha):
         self.alpha = alpha
         self.ema_x = self.ema_y = self.ema_z = None
-
+        
     def update(self, ema):
         if self.ema_x is None:
             self.ema_x, self.ema_y, self.ema_z = ema
@@ -95,7 +96,7 @@ class MainClass:
             self.picam2 = Picamera2()
             WIDTH, HEIGHT = frame_size
             main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-            config = self.picam2.create_video_configuration(main, controls={"FrameRate": 100, "ExposureTime": 5000})
+            config = self.picam2.create_video_configuration(main, controls={"FrameRate": 100, "ExposureTime": 5000}, transform=libcamera.Transform(vflip=1))
             self.picam2.configure(config)
             self.picam2.start()
         else:
@@ -120,9 +121,9 @@ class MainClass:
 
     def process_frame(self, frame):
         corners, ids, rejected = detector.detectMarkers(frame)
+        # print(corners)
         corners, ids, rejected, _ = detector.refineDetectedMarkers(
             image=frame, board=board, detectedCorners=corners, detectedIds=ids, rejectedCorners=rejected,
-            cameraMatrix=self.camera_matrix, distCoeffs=self.distortion_coeff
         )
         return corners, ids
 
@@ -132,13 +133,18 @@ class MainClass:
             corners, ids = self.process_frame(frame)
 
             if ids is not None and len(ids) > 0:
+
                 rvec, tvec = estimate_pose_single_markers(corners, markerLength, self.camera_matrix, self.distortion_coeff)
                 self.draw_axes(frame, rvec, tvec)
                 self.filter_and_send_position(ids, tvec)
 
-            cv2.imshow("frame", frame)
+            # cv2.imshow("frame", frame)
+            
+            if keyboard.is_pressed('q'):
+                break
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
+            
         cv2.destroyAllWindows()
 
     def get_frame(self):
@@ -166,7 +172,7 @@ class MainClass:
 
 
 if __name__ == "__main__":
-    UDP_STREAM = True
+    UDP_STREAM = False
     CAMERA_CALIBRATION_FILE = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
     main = MainClass(cam_calib_path=CAMERA_CALIBRATION_FILE, udp_stream=UDP_STREAM)
     main.run()
