@@ -57,7 +57,7 @@ class RecordData:
 
         main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
         _c = {
-            "FrameRate": 120,
+            "FrameRate": 80, "ExposureTime": 3000
         }
 
         config = self.picam2.create_video_configuration(
