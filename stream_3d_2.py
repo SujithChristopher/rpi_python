@@ -463,7 +463,7 @@ if __name__ == "__main__":
     """
     Check these parameters
     """
-    UDP_STREAM = False
+    UDP_STREAM = True
     CAMERA_CALIBRATION_FILE = _file_path
 
     """
