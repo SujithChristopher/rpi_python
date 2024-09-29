@@ -58,6 +58,7 @@ def estimate_pose_single_markers(
 
 
 _fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
+# _fish_params = toml.load("/home/sujith/Documents/programs/calib_undistort_aruco.toml")
 _fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
 _fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
 map1, map2 = cv2.fisheye.initUndistortRectifyMap(
@@ -93,7 +94,7 @@ class MainClass:
         WIDTH = frame_size[0]
         HEIGHT = frame_size[1]
         main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-        _c = {"FrameRate": 100, "ExposureTime": 1000}
+        _c = {"FrameRate": 100, "ExposureTime": 5000}
         config = self.picam2.create_video_configuration(
             main, controls=_c, transform=libcamera.Transform(vflip=1)
         )
@@ -360,7 +361,7 @@ class MainClass:
                     self.rvec, self.tvec = estimate_pose_single_markers(
                         corners, 0.05, self.camera_matrix, self.distortion_coeff
                     )
-
+                    print(self.tvec)
                     for _r, _t in zip(self.rvec, self.tvec):
                         cv2.drawFrameAxes(
                             self.video_frame,
@@ -375,7 +376,7 @@ class MainClass:
                     self.coordinate_transform()
 
                     self.tvec_dist = self.filter.update(self.tvec_dist)
-
+                
                     # Check if this is the first vector
                     if self.first_vec:
                         self.previous_vec = (
@@ -437,6 +438,7 @@ class MainClass:
 
 if __name__ == "__main__":
     _file_path = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
+    _file_path = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
     print(_file_path)
 
     """
