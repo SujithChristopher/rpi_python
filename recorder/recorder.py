@@ -10,10 +10,14 @@ import msgpack_numpy as mpn
 import argparse
 import time
 from picamera2 import Picamera2
-from libcamera import controls
 import gpiod
+import libcamera
+import keyboard
+import sys
+frame_size = (1280, 800)
 
-
+WIDTH = frame_size[0]
+HEIGHT = frame_size[1]
 class RecordData:
     def __init__(
         self,
@@ -24,16 +28,14 @@ class RecordData:
         default_res=False,
     ):
         self.picam2 = Picamera2()
-        # main = {"size": (1200, 480)}
-        main = {
-            "size": (1640, 1232),
-        }
+        main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
         _c = {
-            "FrameRate": 40,
-            # "AfMode": controls.AfModeEnum.Manual,
-            # "LensPosition": 0.3,
+            "FrameRate": 120,
         }
-        config = self.picam2.create_video_configuration(main, controls=_c)
+
+        config = self.picam2.create_video_configuration(
+            main, controls=_c, transform=libcamera.Transform(vflip=1)
+        )
         self.picam2.configure(config)
         self.picam2.start()
 
@@ -63,11 +65,8 @@ class RecordData:
 
         while True:
             frame = self.picam2.capture_array()
-
-            if not self.isColor:
-                gray_image = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            else:
-                gray_image = frame
+            gray_image = frame[:HEIGHT, :WIDTH]
+            gray_image = cv2.flip(gray_image, 1)
 
             if self.record_camera and self.start_recording:
                 _packed_file = mp.packb(gray_image, default=mpn.encode)
@@ -75,24 +74,23 @@ class RecordData:
                 _time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                 _packed_timestamp = mp.packb([self.sync_line.get_value(), _time_stamp])
                 _timestamp_file.write(_packed_timestamp)
-                # print(self.sync_line.get_value())
 
             if self.display:
-                gray_image = cv2.resize(gray_image, (300, 200))
-                cv2.imshow("webcam", gray_image)
+                gray_image_ = cv2.resize(gray_image, (250, 200))
+                cv2.imshow("webcam", gray_image_)
+                sys.stdout.flush()
                 cv2.waitKey(1)
 
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                print("You Pressed a Key!, ending webcam")
+            if keyboard.is_pressed("s"):
+                print("You Pressed a Key!, started recording from webcam")
+                self.start_recording = True
+
+            if keyboard.is_pressed("q"):
                 cv2.destroyAllWindows()
                 if self.record_camera:
                     _save_file.close()
                     _timestamp_file.close()
                 break
-
-            if cv2.waitKey(1) & 0xFF == ord("s"):
-                print("You Pressed a Key!, started recording from webcam")
-                self.start_recording = True
 
     def run(self):
         """run the program"""
