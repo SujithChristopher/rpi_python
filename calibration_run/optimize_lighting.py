@@ -82,6 +82,14 @@ class OptimizeLighting:
         self.parameter_scan = {
             "ExposureTime": np.arange(1000, 6500, 500)
         }  # 1000 to 6500 with increments of 500
+        
+        self.frame_counter = 0
+        self.skip_counter = 0
+        
+        self.start_fcounter = False # start frame counter
+        self.start_scounter = False # start skip counter
+        
+        self.frame_exposure_t = 0
 
     def calibrate_parameters(self):
         time.sleep(3)
@@ -92,8 +100,9 @@ class OptimizeLighting:
 
     def camera_thread(self):
         while True:
+            
             video_frame = self.picam2.capture_array()[: frame_size[1], : frame_size[0]]
-            metadata = self.picam2.capture_metadata()
+            self.frame_exposure_t = self.picam2.capture_metadata()['ExposureTime']
             video_frame = cv2.remap(
                 cv2.flip(video_frame, 1),
                 map1,
