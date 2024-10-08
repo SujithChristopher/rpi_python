@@ -44,6 +44,7 @@ map1, map2 = cv2.fisheye.initUndistortRectifyMap(
     _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
 )
 
+
 class RecordData:
     def __init__(
         self,

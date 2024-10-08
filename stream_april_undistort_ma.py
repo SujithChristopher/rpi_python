@@ -376,7 +376,7 @@ class MainClass:
                     self.coordinate_transform()
 
                     self.tvec_dist = self.filter.update(self.tvec_dist)
-                
+
                     # Check if this is the first vector
                     if self.first_vec:
                         self.previous_vec = (

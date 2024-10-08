@@ -8,6 +8,7 @@ import os
 try:
     import libcamera
     from picamera2 import Picamera2
+
     WEBCAM = False
 except:
     WEBCAM = True
@@ -208,7 +209,6 @@ class MainClass:
 
         for _d in self.does_not_exist:
             match np.array(_d):
-                
                 case 4:
                     self.tvec_04 = np.nan
                     self.rvec_04 = np.nan
@@ -231,9 +231,9 @@ class MainClass:
         tv_12 = np.nan
         tv_14 = np.nan
         tv_20 = np.nan
-        
+
         rm_04 = np.eye(3)
-        rm_08= np.eye(3)
+        rm_08 = np.eye(3)
         rm_12 = np.eye(3)
         rm_14 = np.eye(3)
         rm_20 = np.eye(3)
@@ -243,7 +243,6 @@ class MainClass:
         id_12_offset = np.array([0.00, 0.0, -0.1075]).reshape(3, 1)
         id_14_offset = np.array([-0.09, 0.0, -0.069]).reshape(3, 1)
         id_20_offset = np.array([0.1, 0.0, -0.069]).reshape(3, 1)
-
 
         if self.tvec_04 is not np.nan:
             tv_04 = np.array(self.tvec_04).reshape(3, 1)
@@ -284,9 +283,17 @@ class MainClass:
         _tr_14 = _rmat.T @ (pa_b_c_14 - self.first_tvec.reshape(3, 1))
         _tr_20 = _rmat.T @ (pa_b_c_20 - self.first_tvec.reshape(3, 1))
 
-
         self.tvec_dist = np.nanmedian(
-            np.array([ _tr_04, _tr_08, _tr_12, _tr_14, _tr_20,]), axis=0
+            np.array(
+                [
+                    _tr_04,
+                    _tr_08,
+                    _tr_12,
+                    _tr_14,
+                    _tr_20,
+                ]
+            ),
+            axis=0,
         )
 
         # print(self.tvec_dist)
@@ -455,7 +462,6 @@ class MainClass:
 
 
 if __name__ == "__main__":
-
     _file_path = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
 
     # _file_path = 'calib_undistort_aruco.toml'

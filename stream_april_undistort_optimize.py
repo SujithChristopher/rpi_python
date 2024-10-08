@@ -6,9 +6,11 @@ import toml
 import os
 import keyboard
 from numba import njit
+
 try:
     import libcamera
     from picamera2 import Picamera2
+
     WEBCAM = False
 except ImportError:
     WEBCAM = True
@@ -39,11 +41,12 @@ map1, map2 = cv2.fisheye.initUndistortRectifyMap(
     _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, frame_size, cv2.CV_16SC2
 )
 
+
 class ExponentialMovingAverageFilter3D:
     def __init__(self, alpha):
         self.alpha = alpha
         self.ema_x = self.ema_y = self.ema_z = None
-        
+
     def update(self, ema):
         if self.ema_x is None:
             self.ema_x, self.ema_y, self.ema_z = ema
@@ -54,7 +57,9 @@ class ExponentialMovingAverageFilter3D:
         return np.array([self.ema_x, self.ema_y, self.ema_z])
 
 
-def estimate_pose_single_markers(corners, marker_size, camera_matrix, distortion_coefficients):
+def estimate_pose_single_markers(
+    corners, marker_size, camera_matrix, distortion_coefficients
+):
     marker_points = np.array(
         [
             [-marker_size / 2, marker_size / 2, 0],
@@ -83,7 +88,9 @@ def estimate_pose_single_markers(corners, marker_size, camera_matrix, distortion
 class MainClass:
     def __init__(self, cam_calib_path, udp_stream=False):
         self.UDP_STREAM = udp_stream
-        self.camera_matrix, self.distortion_coeff = self.load_camera_calibration(cam_calib_path)
+        self.camera_matrix, self.distortion_coeff = self.load_camera_calibration(
+            cam_calib_path
+        )
         self.filter = ExponentialMovingAverageFilter3D(alpha=0.4)
         self.setup_camera()
         self.first_frame = True
@@ -96,7 +103,11 @@ class MainClass:
             self.picam2 = Picamera2()
             WIDTH, HEIGHT = frame_size
             main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-            config = self.picam2.create_video_configuration(main, controls={"FrameRate": 100, "ExposureTime": 5000}, transform=libcamera.Transform(vflip=1))
+            config = self.picam2.create_video_configuration(
+                main,
+                controls={"FrameRate": 100, "ExposureTime": 5000},
+                transform=libcamera.Transform(vflip=1),
+            )
             self.picam2.configure(config)
             self.picam2.start()
         else:
@@ -123,7 +134,11 @@ class MainClass:
         corners, ids, rejected = detector.detectMarkers(frame)
         # print(corners)
         corners, ids, rejected, _ = detector.refineDetectedMarkers(
-            image=frame, board=board, detectedCorners=corners, detectedIds=ids, rejectedCorners=rejected,
+            image=frame,
+            board=board,
+            detectedCorners=corners,
+            detectedIds=ids,
+            rejectedCorners=rejected,
         )
         return corners, ids
 
@@ -133,24 +148,25 @@ class MainClass:
             corners, ids = self.process_frame(frame)
 
             if ids is not None and len(ids) > 0:
-
-                rvec, tvec = estimate_pose_single_markers(corners, markerLength, self.camera_matrix, self.distortion_coeff)
+                rvec, tvec = estimate_pose_single_markers(
+                    corners, markerLength, self.camera_matrix, self.distortion_coeff
+                )
                 self.draw_axes(frame, rvec, tvec)
                 self.filter_and_send_position(ids, tvec)
 
             # cv2.imshow("frame", frame)
-            
-            if keyboard.is_pressed('q'):
+
+            if keyboard.is_pressed("q"):
                 break
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
-            
+
         cv2.destroyAllWindows()
 
     def get_frame(self):
         if not WEBCAM:
             frame = self.picam2.capture_array()
-            frame = frame[:frame_size[1], :frame_size[0]]
+            frame = frame[: frame_size[1], : frame_size[0]]
             frame = cv2.remap(frame, map1, map2, interpolation=cv2.INTER_LINEAR)
         else:
             _, frame = self.camera.read()
@@ -158,7 +174,9 @@ class MainClass:
 
     def draw_axes(self, frame, rvec, tvec):
         for r, t in zip(rvec, tvec):
-            cv2.drawFrameAxes(frame, self.camera_matrix, self.distortion_coeff, r, t, 0.05)
+            cv2.drawFrameAxes(
+                frame, self.camera_matrix, self.distortion_coeff, r, t, 0.05
+            )
 
     def filter_and_send_position(self, ids, tvec):
         filtered_pos = self.filter.update(np.median(tvec, axis=0))
@@ -173,6 +191,8 @@ class MainClass:
 
 if __name__ == "__main__":
     UDP_STREAM = False
-    CAMERA_CALIBRATION_FILE = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
+    CAMERA_CALIBRATION_FILE = (
+        "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
+    )
     main = MainClass(cam_calib_path=CAMERA_CALIBRATION_FILE, udp_stream=UDP_STREAM)
     main.run()

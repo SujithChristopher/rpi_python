@@ -14,10 +14,13 @@ import gpiod
 import libcamera
 import keyboard
 import sys
+
 frame_size = (1280, 800)
 
 WIDTH = frame_size[0]
 HEIGHT = frame_size[1]
+
+
 class RecordData:
     def __init__(
         self,
