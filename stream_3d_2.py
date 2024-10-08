@@ -133,7 +133,7 @@ class MainClass:
         self.tvec_04 = np.nan
         self.tvec_08 = np.nan
         self.tvec_12 = np.nan
-        self.tvec_14 = np.nan
+        self.tvec_24 = np.nan
         self.tvec_20 = np.nan
 
         self.rvec_04 = np.nan
