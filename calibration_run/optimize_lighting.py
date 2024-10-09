@@ -67,7 +67,7 @@ class OptimizeLighting:
         self.picam2 = Picamera2()
         self.config = self.picam2.create_video_configuration(
             {"format": "YUV420", "size": frame_size},
-            controls={"FrameRate": 100, "ExposureTime": 5000},
+            controls={"FrameRate": 100, "ExposureTime": 1000},
             transform=libcamera.Transform(vflip=1),
         )
 
@@ -80,29 +80,33 @@ class OptimizeLighting:
         )
         self.distortion_coeff = np.array(data["calibration"]["dist_coeffs"])
         self.parameter_scan = {
-            "ExposureTime": np.arange(1000, 6500, 500)
+            "ExposureTime": np.arange(1000, 3500, 500)
         }  # 1000 to 6500 with increments of 500
-        
-        self.frame_counter = 0
-        self.skip_counter = 0
-        
-        self.start_fcounter = False # start frame counter
-        self.start_scounter = False # start skip counter
-        
-        self.frame_exposure_t = 0
 
-    def calibrate_parameters(self):
-        time.sleep(3)
-        for _e in self.parameter_scan["ExposureTime"]:
-            self.picam2.set_controls({"ExposureTime": _e})
-            time.sleep(3)
-            print(_e)
+        self.collect_data = {
+            "Corners": [],
+            "CornerCounter":[],
+            "Ids": [],
+            "ExposureTime": [],
+            "ExIndex": [],
+            "FrameCounter": [],
+            "Tvec": [],
+            "Rvec": [],
+        }
+
+        self.frame_counter = 0
+        self.reset_fcounter = True
+        self.exposure_trigger = True
+        self.exposure_idx = 0
+        self.frame_exposure_t = 0
+        self.current_exposure = None
+        self.stop_recording = False
+        self.corner_counter = 0
 
     def camera_thread(self):
         while True:
-            
             video_frame = self.picam2.capture_array()[: frame_size[1], : frame_size[0]]
-            self.frame_exposure_t = self.picam2.capture_metadata()['ExposureTime']
+            self.frame_exposure_t = self.picam2.capture_metadata()["ExposureTime"]
             video_frame = cv2.remap(
                 cv2.flip(video_frame, 1),
                 map1,
@@ -121,27 +125,78 @@ class OptimizeLighting:
             )
 
             if ids is not None:
-                video_frame = aruco.drawDetectedMarkers(video_frame, corners, ids)
-                _, _ = estimate_pose_single_markers(
-                    corners, 0.05, self.camera_matrix, self.distortion_coeff
-                )
+                self.collect_data["Corners"].append(corners)
+                self.collect_data["Ids"].append(ids)
+                
+                self.collect_data["ExposureTime"].append(0)
+                self.collect_data["ExIndex"].append(self.current_exposure)
+                self.collect_data["FrameCounter"].append(0)
+                self.collect_data["Tvec"].append(np.zeros(3))
+                self.collect_data["Rvec"].append(np.eye(3))
+                self.corner_counter += 1
+            
+            else:
+                self.collect_data["Corners"].append(None)
+                self.collect_data["Ids"].append(None)
+                self.collect_data["ExposureTime"].append(0)
+                self.collect_data["ExIndex"].append(self.current_exposure)
+                self.collect_data["FrameCounter"].append(0)
+                self.collect_data["Tvec"].append(np.zeros(3))
+                self.collect_data["Rvec"].append(np.eye(3))
+
+
+                self.reset_fcounter = False
+            self.frame_counter += 1
+            
+            if self.frame_counter == 300:
+                
+                self.collect_data['CornerCounter'].append(self.corner_counter)
+                self.corner_counter = 0
+                
+                self.exposure_idx += 1
+                self.frame_counter = 0
+                print('new') 
+                if self.exposure_idx == len(self.parameter_scan['ExposureTime']):
+
+                    self.stop_recording = True
+                    self.picam2.close()
+                    break
+                
+                self.picam2.set_controls(
+                    {"ExposureTime": self.parameter_scan["ExposureTime"][self.exposure_idx]}
+                ) 
+                
+            if self.stop_recording:
+                self.picam2.close()
+                print('asdflkj')
+                break
             #     cv2.imshow("frame", cv2.resize(video_frame, (350, 200)))
 
             #     if cv2.waitKey(1) & 0xFF == ord("q"):
             #         break
             # cv2.destroyAllWindows()
-            print(video_frame.shape)
-
+            # print(video_frame.shape)
+        self.process_recorded()
+        
+    def process_recorded(self):
+        
+        print(self.collect_data['CornerCounter'])
+        print('done')
+        pass
+        
+        
+        
     def run(self):
         t1 = Thread(target=self.camera_thread)
-        t2 = Thread(target=self.calibrate_parameters)
+        # t2 = Thread(target=self.calibrate_parameters)
         t1.start()
-        t2.start()
+        # t2.start()
         t1.join()
-        t2.join()
+        # t2.join()
 
 
 if __name__ == "__main__":
     CAMERA_CALIBRATION_FILE = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
     main = OptimizeLighting(cam_calib_path=CAMERA_CALIBRATION_FILE)
     main.run()
+

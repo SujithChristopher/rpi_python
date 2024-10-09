@@ -128,8 +128,7 @@ class MainClass:
 
         self.RMAT_INIT = False
         self.initial_rmat = np.eye(3)
-        
-        
+
         self.tvec_04 = np.nan
         self.tvec_08 = np.nan
         self.tvec_12 = np.nan
