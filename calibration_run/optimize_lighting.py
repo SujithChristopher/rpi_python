@@ -168,7 +168,7 @@ class OptimizeLighting:
                 
             if self.stop_recording:
                 self.picam2.close()
-                print('asdflkj')
+                print('Stopping recording')
                 break
             #     cv2.imshow("frame", cv2.resize(video_frame, (350, 200)))
 
@@ -188,11 +188,8 @@ class OptimizeLighting:
         
     def run(self):
         t1 = Thread(target=self.camera_thread)
-        # t2 = Thread(target=self.calibrate_parameters)
         t1.start()
-        # t2.start()
         t1.join()
-        # t2.join()
 
 
 if __name__ == "__main__":
