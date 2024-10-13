@@ -426,7 +426,8 @@ class MainClass:
                                 self.current_vec
                             )  # Use the current vector otherwise
                             self.previous_vec = self.current_vec
-
+                            
+                        self.tvec_cm = self.current_vec
                         self.tvec_x = (
                             str(-1 * self.tvec_cm[0])
                             + ","
@@ -463,6 +464,7 @@ class MainClass:
 
 if __name__ == "__main__":
     _file_path = "/home/sujith/Documents/programs/calib_undistort_aruco.toml"
+    _file_path = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
 
     # _file_path = 'calib_undistort_aruco.toml'
     print(_file_path)
