@@ -44,6 +44,7 @@ map1, map2 = cv2.fisheye.initUndistortRectifyMap(
     _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
 )
 
+
 class RecordData:
     def __init__(
         self,
@@ -56,9 +57,7 @@ class RecordData:
         self.picam2 = Picamera2()
 
         main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-        _c = {
-            "FrameRate": 80, "ExposureTime": 3000
-        }
+        _c = {"FrameRate": 80, "ExposureTime": 3000}
 
         config = self.picam2.create_video_configuration(
             main, controls=_c, transform=libcamera.Transform(vflip=1)
@@ -74,7 +73,7 @@ class RecordData:
         self.display = True
 
         self.isColor = isColor
-        
+
         self.push_trigger = False
         self.push_frame_counter = 0
         self.recorded_signals = 0
@@ -127,7 +126,7 @@ class RecordData:
                 else:
                     _packed_file = mp.packb([None, None], default=mpn.encode)
                     _save_file.write(_packed_file)
-                    
+
                 _time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
                 if keyboard.is_pressed("t"):  # if key 't' is pressed
@@ -136,7 +135,11 @@ class RecordData:
                 if self.push_trigger:
                     self.push_frame_counter += 1
                     _packed_timestamp = mp.packb(
-                        [_time_stamp, self.sync_line.get_value(),str(self.recorded_signals)],
+                        [
+                            _time_stamp,
+                            self.sync_line.get_value(),
+                            str(self.recorded_signals),
+                        ],
                         default=mpn.encode,
                     )
                     if self.push_frame_counter == 1:
@@ -149,9 +152,10 @@ class RecordData:
                         print("recorded")
                 else:
                     _packed_timestamp = mp.packb(
-                        [_time_stamp, self.sync_line.get_value(), str("NA")], default=mpn.encode
+                        [_time_stamp, self.sync_line.get_value(), str("NA")],
+                        default=mpn.encode,
                     )
-                    
+
                 _timestamp_file.write(_packed_timestamp)
 
             if self.display:
