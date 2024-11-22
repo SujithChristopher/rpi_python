@@ -1,11 +1,18 @@
 import numpy as np
 import cv2
 from cv2 import aruco
-from picamera2 import Picamera2
-import libcamera
+import platform
+
+OS_TYPE = platform.system()
+
+if OS_TYPE == "Linux":
+    from picamera2 import Picamera2
+    import libcamera
+    
 import socket
 import toml
 import os
+from filters import ExponentialMovingAverageFilter3D
 
 ARUCO_PARAMETERS = aruco.DetectorParameters()
 ARUCO_PARAMETERS.useAruco3Detection = 1
@@ -23,7 +30,6 @@ board = aruco.GridBoard(
 )
 
 frame_size = (1200, 800)
-
 
 def estimate_pose_single_markers(
     corners, marker_size, camera_matrix, distortion_coefficients
@@ -57,50 +63,36 @@ def estimate_pose_single_markers(
     return np.array(rvecs, dtype=np.float32), np.array(tvecs, dtype=np.float32)
 
 
-_fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
-# _fish_params = toml.load("/home/sujith/Documents/programs/calib_undistort_aruco.toml")
-_fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
-_fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
-map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-    _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
-)
-
-
-class ExponentialMovingAverageFilter3D:
-    def __init__(self, alpha):
-        self.alpha = alpha
-        self.ema_x = None
-        self.ema_y = None
-        self.ema_z = None
-
-    def update(self, ema):
-        if self.ema_x is None:
-            self.ema_x = ema[0]
-            self.ema_y = ema[1]
-            self.ema_z = ema[2]
-        else:
-            self.ema_x = self.alpha * ema[0] + (1 - self.alpha) * self.ema_x
-            self.ema_y = self.alpha * ema[1] + (1 - self.alpha) * self.ema_y
-            self.ema_z = self.alpha * ema[2] + (1 - self.alpha) * self.ema_z
-        return np.array([self.ema_x, self.ema_y, self.ema_z])
-
+if OS_TYPE == "Linux":
+    _fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
+    _fish_matrix = np.array(_fish_params["calibration"]["camera_matrix"]).reshape(3, 3)
+    _fish_dist = np.array(_fish_params["calibration"]["dist_coeffs"])
+    map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+        _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
+    )
 
 class MainClass:
     def __init__(self, cam_calib_path, udp_stream=False):
         self.ar_pos = None
         self.UDP_STREAM = udp_stream
-
-        self.picam2 = Picamera2()
-        WIDTH = frame_size[0]
-        HEIGHT = frame_size[1]
-        main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-        _c = {"FrameRate": 100, "ExposureTime": 5000}
-        config = self.picam2.create_video_configuration(
-            main, controls=_c, transform=libcamera.Transform(vflip=1)
-        )
-        self.picam2.configure(config)
-        self.picam2.start()
-
+        
+        if OS_TYPE == "Linux":
+            self.picam2 = Picamera2()
+            WIDTH = frame_size[0]
+            HEIGHT = frame_size[1]
+            main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
+            _c = {"FrameRate": 100, "ExposureTime": 5000}
+            config = self.picam2.create_video_configuration(
+                main, controls=_c, transform=libcamera.Transform(vflip=1)
+            )
+            self.picam2.configure(config)
+            self.picam2.start()
+        else:
+            self.camera = cv2.VideoCapture(0)
+            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            self.camera.set(cv2.CAP_PROP_FPS, 30)
+            
         self.rvec = None
         self.tvec = None
         self.first_rvec = None
@@ -139,8 +131,6 @@ class MainClass:
         self.rmat = np.eye(3)
         self.save_first_frame = False
 
-        # self.data_file = open(self.save_data_path, 'wb')
-        # self.raw_data_file = open(self.raw_data, 'wb')
         self.raw_data_trigger = False
 
         data = toml.load(cam_calib_path)
@@ -444,7 +434,7 @@ if __name__ == "__main__":
     """
     Check these parameters
     """
-    UDP_STREAM = True
+    UDP_STREAM = False
     CAMERA_CALIBRATION_FILE = _file_path
 
     """
