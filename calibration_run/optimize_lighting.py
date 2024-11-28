@@ -7,6 +7,7 @@ import libcamera
 from threading import Thread
 import time
 import numpy as np
+import toml
 
 ARUCO_PARAMETERS = aruco.DetectorParameters()
 ARUCO_PARAMETERS.useAruco3Detection = 1
@@ -80,7 +81,7 @@ class OptimizeLighting:
         )
         self.distortion_coeff = np.array(data["calibration"]["dist_coeffs"])
         self.parameter_scan = {
-            "ExposureTime": np.arange(1000, 3500, 500)
+            "ExposureTime": np.arange(1000, 2000, 500)
         }  # 1000 to 6500 with increments of 500
 
         self.collect_data = {
@@ -103,7 +104,11 @@ class OptimizeLighting:
         self.stop_recording = False
         self.corner_counter = 0
 
+        self.default_ids = [4, 8, 12, 14, 20]
+
+
     def camera_thread(self):
+        print('ExposureTime: ', 1000)
         while True:
             video_frame = self.picam2.capture_array()[: frame_size[1], : frame_size[0]]
             self.frame_exposure_t = self.picam2.capture_metadata()["ExposureTime"]
@@ -124,15 +129,19 @@ class OptimizeLighting:
                 rejectedCorners=rejected,
             )
 
-            if ids is not None:
+            rvec, tvec = estimate_pose_single_markers(corners, 0.05, self.camera_matrix, self.distortion_coeff)
+            shp = tvec.shape
+            if (ids is not None) and all(
+                    item in self.default_ids for item in np.array(ids)
+                ):
                 self.collect_data["Corners"].append(corners)
                 self.collect_data["Ids"].append(ids)
                 
                 self.collect_data["ExposureTime"].append(0)
                 self.collect_data["ExIndex"].append(self.current_exposure)
                 self.collect_data["FrameCounter"].append(0)
-                self.collect_data["Tvec"].append(np.zeros(3))
-                self.collect_data["Rvec"].append(np.eye(3))
+                self.collect_data["Tvec"].append(tvec)
+                self.collect_data["Rvec"].append(rvec)
                 self.corner_counter += 1
             
             else:
@@ -141,27 +150,27 @@ class OptimizeLighting:
                 self.collect_data["ExposureTime"].append(0)
                 self.collect_data["ExIndex"].append(self.current_exposure)
                 self.collect_data["FrameCounter"].append(0)
-                self.collect_data["Tvec"].append(np.zeros(3))
+                self.collect_data["Tvec"].append(np.zeros(shp))
                 self.collect_data["Rvec"].append(np.eye(3))
 
 
                 self.reset_fcounter = False
             self.frame_counter += 1
             
-            if self.frame_counter == 300:
+            if self.frame_counter == 100:
                 
                 self.collect_data['CornerCounter'].append(self.corner_counter)
                 self.corner_counter = 0
                 
                 self.exposure_idx += 1
                 self.frame_counter = 0
-                print('new') 
                 if self.exposure_idx == len(self.parameter_scan['ExposureTime']):
 
                     self.stop_recording = True
                     self.picam2.close()
                     break
-                
+                print('ExposureTime: ', self.parameter_scan["ExposureTime"][self.exposure_idx]) 
+
                 self.picam2.set_controls(
                     {"ExposureTime": self.parameter_scan["ExposureTime"][self.exposure_idx]}
                 ) 
@@ -170,18 +179,41 @@ class OptimizeLighting:
                 self.picam2.close()
                 print('Stopping recording')
                 break
-            #     cv2.imshow("frame", cv2.resize(video_frame, (350, 200)))
+            cv2.imshow("frame", cv2.resize(video_frame, (350, 200)))
 
-            #     if cv2.waitKey(1) & 0xFF == ord("q"):
-            #         break
-            # cv2.destroyAllWindows()
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                
+                cv2.destroyAllWindows()
+                break
             # print(video_frame.shape)
         self.process_recorded()
         
     def process_recorded(self):
+
+        ex_id = np.argmax(self.collect_data['CornerCounter'])
         
+        print('Frames detected in each exposure interval')
         print(self.collect_data['CornerCounter'])
-        print('done')
+        print('argsort value', np.argsort(self.collect_data['CornerCounter']))
+        print('Exposure index: ', np.argmax(self.collect_data['CornerCounter']))
+        print('Exposure time: ', self.parameter_scan["ExposureTime"][ex_id])
+
+        tvec = np.array(self.collect_data['Tvec'], )
+
+        tvec = tvec.reshape(tvec.shape[0],3)
+        norms = []
+        print('shape')
+        print(tvec.shape)
+
+        # Iterate in steps of 500
+        for i in range(0, tvec.shape[0], 500):
+            chunk = tvec[i:i+500]
+            norm = np.linalg.norm(chunk, axis=1)  # Calculate the norm for each row in the chunk
+            norms.append(norm)
+            print(norm)
+            print('asdf')
+        # print(norms)
+        print('Minimum SD of Tvec')
         pass
         
         
