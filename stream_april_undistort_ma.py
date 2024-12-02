@@ -8,7 +8,7 @@ OS_TYPE = platform.system()
 if OS_TYPE == "Linux":
     from picamera2 import Picamera2
     import libcamera
-    
+
 import socket
 import toml
 import os
@@ -30,6 +30,7 @@ board = aruco.GridBoard(
 )
 
 frame_size = (1200, 800)
+
 
 def estimate_pose_single_markers(
     corners, marker_size, camera_matrix, distortion_coefficients
@@ -71,11 +72,12 @@ if OS_TYPE == "Linux":
         _fish_matrix, _fish_dist, np.eye(3), _fish_matrix, (1200, 800), cv2.CV_16SC2
     )
 
+
 class MainClass:
     def __init__(self, cam_calib_path, udp_stream=False):
         self.ar_pos = None
         self.UDP_STREAM = udp_stream
-        
+
         if OS_TYPE == "Linux":
             self.picam2 = Picamera2()
             WIDTH = frame_size[0]
@@ -92,7 +94,7 @@ class MainClass:
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
             self.camera.set(cv2.CAP_PROP_FPS, 30)
-            
+
         self.rvec = None
         self.tvec = None
         self.first_rvec = None

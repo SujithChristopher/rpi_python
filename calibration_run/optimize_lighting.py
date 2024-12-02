@@ -85,7 +85,7 @@ class OptimizeLighting:
 
         self.collect_data = {
             "Corners": [],
-            "CornerCounter":[],
+            "CornerCounter": [],
             "Ids": [],
             "ExposureTime": [],
             "ExIndex": [],
@@ -127,14 +127,14 @@ class OptimizeLighting:
             if ids is not None:
                 self.collect_data["Corners"].append(corners)
                 self.collect_data["Ids"].append(ids)
-                
+
                 self.collect_data["ExposureTime"].append(0)
                 self.collect_data["ExIndex"].append(self.current_exposure)
                 self.collect_data["FrameCounter"].append(0)
                 self.collect_data["Tvec"].append(np.zeros(3))
                 self.collect_data["Rvec"].append(np.eye(3))
                 self.corner_counter += 1
-            
+
             else:
                 self.collect_data["Corners"].append(None)
                 self.collect_data["Ids"].append(None)
@@ -144,31 +144,32 @@ class OptimizeLighting:
                 self.collect_data["Tvec"].append(np.zeros(3))
                 self.collect_data["Rvec"].append(np.eye(3))
 
-
                 self.reset_fcounter = False
             self.frame_counter += 1
-            
+
             if self.frame_counter == 300:
-                
-                self.collect_data['CornerCounter'].append(self.corner_counter)
+                self.collect_data["CornerCounter"].append(self.corner_counter)
                 self.corner_counter = 0
-                
+
                 self.exposure_idx += 1
                 self.frame_counter = 0
-                print('new') 
-                if self.exposure_idx == len(self.parameter_scan['ExposureTime']):
-
+                print("new")
+                if self.exposure_idx == len(self.parameter_scan["ExposureTime"]):
                     self.stop_recording = True
                     self.picam2.close()
                     break
-                
+
                 self.picam2.set_controls(
-                    {"ExposureTime": self.parameter_scan["ExposureTime"][self.exposure_idx]}
-                ) 
-                
+                    {
+                        "ExposureTime": self.parameter_scan["ExposureTime"][
+                            self.exposure_idx
+                        ]
+                    }
+                )
+
             if self.stop_recording:
                 self.picam2.close()
-                print('Stopping recording')
+                print("Stopping recording")
                 break
             #     cv2.imshow("frame", cv2.resize(video_frame, (350, 200)))
 
@@ -177,15 +178,12 @@ class OptimizeLighting:
             # cv2.destroyAllWindows()
             # print(video_frame.shape)
         self.process_recorded()
-        
+
     def process_recorded(self):
-        
-        print(self.collect_data['CornerCounter'])
-        print('done')
+        print(self.collect_data["CornerCounter"])
+        print("done")
         pass
-        
-        
-        
+
     def run(self):
         t1 = Thread(target=self.camera_thread)
         t1.start()
@@ -196,4 +194,3 @@ if __name__ == "__main__":
     CAMERA_CALIBRATION_FILE = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
     main = OptimizeLighting(cam_calib_path=CAMERA_CALIBRATION_FILE)
     main.run()
-

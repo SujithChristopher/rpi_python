@@ -426,7 +426,7 @@ class MainClass:
                                 self.current_vec
                             )  # Use the current vector otherwise
                             self.previous_vec = self.current_vec
-                            
+
                         self.tvec_cm = self.current_vec
                         self.tvec_x = (
                             str(-1 * self.tvec_cm[0])
