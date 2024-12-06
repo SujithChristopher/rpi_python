@@ -106,9 +106,8 @@ class OptimizeLighting:
 
         self.default_ids = [4, 8, 12, 14, 20]
 
-
     def camera_thread(self):
-        print('ExposureTime: ', 1000)
+        print("ExposureTime: ", 1000)
         while True:
             video_frame = self.picam2.capture_array()[: frame_size[1], : frame_size[0]]
             self.frame_exposure_t = self.picam2.capture_metadata()["ExposureTime"]
@@ -129,11 +128,13 @@ class OptimizeLighting:
                 rejectedCorners=rejected,
             )
 
-            rvec, tvec = estimate_pose_single_markers(corners, 0.05, self.camera_matrix, self.distortion_coeff)
+            rvec, tvec = estimate_pose_single_markers(
+                corners, 0.05, self.camera_matrix, self.distortion_coeff
+            )
             shp = tvec.shape
             if (ids is not None) and all(
-                    item in self.default_ids for item in np.array(ids)
-                ):
+                item in self.default_ids for item in np.array(ids)
+            ):
                 self.collect_data["Corners"].append(corners)
                 self.collect_data["Ids"].append(ids)
 
@@ -155,20 +156,21 @@ class OptimizeLighting:
 
                 self.reset_fcounter = False
             self.frame_counter += 1
-            
+
             if self.frame_counter == 100:
-                
-                self.collect_data['CornerCounter'].append(self.corner_counter)
+                self.collect_data["CornerCounter"].append(self.corner_counter)
                 self.corner_counter = 0
 
                 self.exposure_idx += 1
                 self.frame_counter = 0
-                if self.exposure_idx == len(self.parameter_scan['ExposureTime']):
-
+                if self.exposure_idx == len(self.parameter_scan["ExposureTime"]):
                     self.stop_recording = True
                     self.picam2.close()
                     break
-                print('ExposureTime: ', self.parameter_scan["ExposureTime"][self.exposure_idx]) 
+                print(
+                    "ExposureTime: ",
+                    self.parameter_scan["ExposureTime"][self.exposure_idx],
+                )
 
                 self.picam2.set_controls(
                     {
@@ -185,38 +187,40 @@ class OptimizeLighting:
             cv2.imshow("frame", cv2.resize(video_frame, (350, 200)))
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
-                
                 cv2.destroyAllWindows()
                 break
             # print(video_frame.shape)
         self.process_recorded()
 
     def process_recorded(self):
+        ex_id = np.argmax(self.collect_data["CornerCounter"])
 
-        ex_id = np.argmax(self.collect_data['CornerCounter'])
-        
-        print('Frames detected in each exposure interval')
-        print(self.collect_data['CornerCounter'])
-        print('argsort value', np.argsort(self.collect_data['CornerCounter']))
-        print('Exposure index: ', np.argmax(self.collect_data['CornerCounter']))
-        print('Exposure time: ', self.parameter_scan["ExposureTime"][ex_id])
+        print("Frames detected in each exposure interval")
+        print(self.collect_data["CornerCounter"])
+        print("argsort value", np.argsort(self.collect_data["CornerCounter"]))
+        print("Exposure index: ", np.argmax(self.collect_data["CornerCounter"]))
+        print("Exposure time: ", self.parameter_scan["ExposureTime"][ex_id])
 
-        tvec = np.array(self.collect_data['Tvec'], )
+        tvec = np.array(
+            self.collect_data["Tvec"],
+        )
 
-        tvec = tvec.reshape(tvec.shape[0],3)
+        tvec = tvec.reshape(tvec.shape[0], 3)
         norms = []
-        print('shape')
+        print("shape")
         print(tvec.shape)
 
         # Iterate in steps of 500
         for i in range(0, tvec.shape[0], 500):
-            chunk = tvec[i:i+500]
-            norm = np.linalg.norm(chunk, axis=1)  # Calculate the norm for each row in the chunk
+            chunk = tvec[i : i + 500]
+            norm = np.linalg.norm(
+                chunk, axis=1
+            )  # Calculate the norm for each row in the chunk
             norms.append(norm)
             print(norm)
-            print('asdf')
+            print("asdf")
         # print(norms)
-        print('Minimum SD of Tvec')
+        print("Minimum SD of Tvec")
         pass
 
     def run(self):

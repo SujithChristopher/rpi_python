@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+
 class ExponentialMovingAverageFilter3D:
     def __init__(self, alpha):
         self.alpha = alpha
@@ -26,7 +27,6 @@ class CoordinateTransform:
         self.rotation_matrix = None
         self.translation_vector = None
         self.transformed = None
-        
 
     def compute_transformed_coordinates(self, coordinate):
         self.rotation_matrix = R.from_rotvec(

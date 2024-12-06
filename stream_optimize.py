@@ -6,6 +6,7 @@ import socket
 import toml
 import os
 from filters import ExponentialMovingAverageFilter3D
+import struct
 
 
 class Config:
@@ -150,7 +151,64 @@ class MainClass:
 
     def _get_centroid(self, ids, rvecs, tvecs):
         ids = np.array(ids).flatten()
-        print(ids)
+        tvecs = np.array(tvecs).reshape(len(ids), 3)
+        rvecs = np.array(rvecs).reshape(len(ids), 3)
+
+        _transformed = np.full((len(ids), 3), np.nan)
+        for index, _id in enumerate(ids):
+            match np.array(_id):
+                case 4:
+                    _transformed[index] = (
+                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
+                        + Config.MARKER_OFFSETS[4].reshape(3, 1)
+                    ).T[0]
+                case 8:
+                    _transformed[index] = (
+                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
+                        + Config.MARKER_OFFSETS[8].reshape(3, 1)
+                    ).T[0]
+                case 12:
+                    _transformed[index] = (
+                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
+                        + Config.MARKER_OFFSETS[12].reshape(3, 1)
+                    ).T[0]
+                case 14:
+                    _transformed[index] = (
+                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
+                        + Config.MARKER_OFFSETS[14].reshape(3, 1)
+                    ).T[0]
+                case 20:
+                    _transformed[index] = (
+                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
+                        + Config.MARKER_OFFSETS[20].reshape(3, 1)
+                    ).T[0]
+
+        return np.nanmean(_transformed, axis=0).flatten()
+
+    def _get_local_coordinates(self, ids, first_rvecs, first_tvecs, centroid):
+        ids = np.array(ids).flatten()
+        first_tvecs = np.array(first_tvecs).reshape(len(ids), 3)
+        first_rvecs = np.array(first_rvecs).reshape(len(ids), 3)
+
+        _r = cv2.Rodrigues(first_rvecs[0])[0]
+        _t = first_tvecs[0]
+        # print('val',centroid-_t)
+        _local_coordinates = _r.T @ (centroid - _t).reshape(3, 1)
+
+        return _local_coordinates.T[0]
+
+    def _send_coordinates(self, _message, _transformed):
+        match _message:
+            case "STOP":
+                _msg = 1.0
+            case "START":
+                _msg = 2.0
+            case "RESET":
+                _msg = 5.0
+
+        _transformed = np.append(_msg, _transformed).flatten()
+        _data_bytes = struct.pack("f" * len(_transformed), *_transformed)
+        self.udp_socket.sendto(_data_bytes, self.addr)
 
     def process_frame(self):
         # Capture frame
@@ -170,8 +228,20 @@ class MainClass:
         if ids is not None:
             self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
             rvecs, tvecs = self.estimate_pose(corners)
+            if self.first_frame:
+                self.first_rvec, self.first_tvec = rvecs, tvecs
+                self.first_frame = False
             self._draw_axes(rvecs, tvecs)
-            self._get_centroid(ids, rvecs, tvecs)
+            _centroid = self._get_centroid(ids, rvecs, tvecs)
+            _local_coordinates = self._get_local_coordinates(
+                ids, rvecs, tvecs, _centroid
+            )
+            
+            _local_coordinates = self.filter.update(_local_coordinates)
+            # print(_centroid, _local_coordinates)
+            if self.udp_stream:
+                self.received_message, self.addr = self.udp_socket.recvfrom(30)
+                self._send_coordinates("START", _local_coordinates)
 
         self.video_frame = cv2.resize(self.video_frame, (350, 200))
         cv2.imshow("frame", self.video_frame)
@@ -189,5 +259,5 @@ if __name__ == "__main__":
     CAMERA_CALIB_PATH = (
         r"E:\CMC\pyprojects\programs_rpi\rpi_python\calib_mono_1200_800.toml"
     )
-    main = MainClass(cam_calib_path=CAMERA_CALIB_PATH, udp_stream=False)
+    main = MainClass(cam_calib_path=CAMERA_CALIB_PATH, udp_stream=True)
     main.run()
