@@ -7,6 +7,8 @@ import toml
 import os
 from filters import ExponentialMovingAverageFilter3D
 import struct
+import csv
+from datetime import datetime
 
 
 class Config:
@@ -49,6 +51,11 @@ class MainClass:
         self.video_frame = None
         self.tvec_dist = np.zeros(3)
         self.first_frame = True
+        self.save_path = None
+        self.csv_writer = None
+        self.record = False
+        
+        self.received_message = ""
 
         if platform.system() == "Linux":
             self._init_rpi_camera()
@@ -200,7 +207,7 @@ class MainClass:
     def _send_coordinates(self, _message, _transformed):
         match _message:
             case "STOP":
-                _msg = 1.0
+                _msg = -99.0
             case "START":
                 _msg = 2.0
             case "RESET":
@@ -241,14 +248,44 @@ class MainClass:
             # print(_centroid, _local_coordinates)
             if self.udp_stream:
                 self.received_message, self.addr = self.udp_socket.recvfrom(30)
-                self._send_coordinates("START", _local_coordinates)
+                if self.received_message == b"STOP":
+                    self._send_coordinates("STOP", _local_coordinates)
+                elif self.received_message.startswith(b"USER:"):
+                    self._hid = self.received_message.decode("utf-8").split(":")[1]
+                    if self.save_path is None:
+                        self._select_hospitalid()
+                    self._send_coordinates("START", _local_coordinates)
+                    self.record = True
+                
+                elif self.received_message.startswith(b"CHANGE:"):
+                    self.save_path = None
+                    self._hid = self.received_message.decode("utf-8").split(":")[1]
+                    self._select_hospitalid()  
+                    self._send_coordinates("START", _local_coordinates)
+                    self.record = True
+                    
+                elif self.received_message == b"RESET":
+                    self._send_coordinates("RESET", _local_coordinates)
+                else:
+                    self._send_coordinates("START", _local_coordinates)
 
+                if self.record:
+                    self.csv_writer.writerow([_local_coordinates])
+                    
         self.video_frame = cv2.resize(self.video_frame, (350, 200))
         cv2.imshow("frame", self.video_frame)
 
+    def _select_hospitalid(self):
+        # TODO: Implement hospital id selection
+        if self.save_path is None:
+            self.save_path = os.path.join(os.path.expanduser('~/Documents/NOARK/data'), self._hid)
+            self.csv_writer = csv.writer(open(os.path.join(self.save_path, datetime.now().strftime("%Y_%m_%d_%H_%M_%S") +'_data.csv'), 'w'))
+            
     def run(self):
         while True:
             self.process_frame()
+            if self.received_message == b"STOP":
+                break
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
         cv2.destroyAllWindows()
