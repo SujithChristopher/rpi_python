@@ -57,7 +57,7 @@ class MainClass:
         
         self.received_message = ""
 
-        if platform.system() == "Linux":
+        if platform.system() == "Linux":    
             self._init_rpi_camera()
         else:
             self._init_camera()
