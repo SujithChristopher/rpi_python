@@ -54,10 +54,10 @@ class MainClass:
         self.save_path = None
         self.csv_writer = None
         self.record = False
-        
+
         self.received_message = ""
 
-        if platform.system() == "Linux":    
+        if platform.system() == "Linux":
             self._init_rpi_camera()
         else:
             self._init_camera()
@@ -109,7 +109,7 @@ class MainClass:
         )
 
     def _init_camera(self):
-        self.camera = cv2.VideoCapture(0)
+        self.camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         self.camera.set(cv2.CAP_PROP_FPS, 30)
@@ -166,28 +166,33 @@ class MainClass:
             match np.array(_id):
                 case 4:
                     _transformed[index] = (
-                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
-                        + Config.MARKER_OFFSETS[4].reshape(3, 1)
+                        cv2.Rodrigues(rvecs[index])[0]
+                        @ Config.MARKER_OFFSETS[4].reshape(3, 1)
+                        + tvecs[index].reshape(3, 1)
                     ).T[0]
                 case 8:
                     _transformed[index] = (
-                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
-                        + Config.MARKER_OFFSETS[8].reshape(3, 1)
+                        cv2.Rodrigues(rvecs[index])[0]
+                        @ Config.MARKER_OFFSETS[8].reshape(3, 1)
+                        + tvecs[index].reshape(3, 1)
                     ).T[0]
                 case 12:
                     _transformed[index] = (
-                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
-                        + Config.MARKER_OFFSETS[12].reshape(3, 1)
+                        cv2.Rodrigues(rvecs[index])[0]
+                        @ Config.MARKER_OFFSETS[12].reshape(3, 1)
+                        + tvecs[index].reshape(3, 1)
                     ).T[0]
                 case 14:
                     _transformed[index] = (
-                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
-                        + Config.MARKER_OFFSETS[14].reshape(3, 1)
+                        cv2.Rodrigues(rvecs[index])[0]
+                        @ Config.MARKER_OFFSETS[14].reshape(3, 1)
+                        + tvecs[index].reshape(3, 1)
                     ).T[0]
                 case 20:
                     _transformed[index] = (
-                        cv2.Rodrigues(rvecs[index])[0] @ tvecs[index].reshape(3, 1)
-                        + Config.MARKER_OFFSETS[20].reshape(3, 1)
+                        cv2.Rodrigues(rvecs[index])[0]
+                        @ Config.MARKER_OFFSETS[20].reshape(3, 1)
+                        + tvecs[index].reshape(3, 1)
                     ).T[0]
 
         return np.nanmean(_transformed, axis=0).flatten()
@@ -197,11 +202,15 @@ class MainClass:
         first_tvecs = np.array(first_tvecs).reshape(len(ids), 3)
         first_rvecs = np.array(first_rvecs).reshape(len(ids), 3)
 
+        _id = ids[0]
         _r = cv2.Rodrigues(first_rvecs[0])[0]
         _t = first_tvecs[0]
-        # print('val',centroid-_t)
-        _local_coordinates = _r.T @ (centroid - _t).reshape(3, 1)
 
+        _local_camera_t = _r @ Config.MARKER_OFFSETS[_id].reshape(3, 1) + _t.reshape(
+            3, 1
+        )
+        _local_camera_t = _local_camera_t.T[0]
+        _local_coordinates = _r.T @ (_local_camera_t - centroid).reshape(3, 1)
         return _local_coordinates.T[0]
 
     def _send_coordinates(self, _message, _transformed):
@@ -241,11 +250,11 @@ class MainClass:
             self._draw_axes(rvecs, tvecs)
             _centroid = self._get_centroid(ids, rvecs, tvecs)
             _local_coordinates = self._get_local_coordinates(
-                ids, rvecs, tvecs, _centroid
+                ids, self.first_rvec, self.first_tvec, _centroid
             )
-            
+
             _local_coordinates = self.filter.update(_local_coordinates)
-            # print(_centroid, _local_coordinates)
+            # print(_local_coordinates)
             if self.udp_stream:
                 self.received_message, self.addr = self.udp_socket.recvfrom(30)
                 if self.received_message == b"STOP":
@@ -256,14 +265,14 @@ class MainClass:
                         self._select_hospitalid()
                     self._send_coordinates("START", _local_coordinates)
                     self.record = True
-                
+
                 elif self.received_message.startswith(b"CHANGE:"):
                     self.save_path = None
                     self._hid = self.received_message.decode("utf-8").split(":")[1]
-                    self._select_hospitalid()  
+                    self._select_hospitalid()
                     self._send_coordinates("START", _local_coordinates)
                     self.record = True
-                    
+
                 elif self.received_message == b"RESET":
                     self._send_coordinates("RESET", _local_coordinates)
                 else:
@@ -271,16 +280,26 @@ class MainClass:
 
                 if self.record:
                     self.csv_writer.writerow([_local_coordinates])
-                    
+
         self.video_frame = cv2.resize(self.video_frame, (350, 200))
         cv2.imshow("frame", self.video_frame)
 
     def _select_hospitalid(self):
         # TODO: Implement hospital id selection
         if self.save_path is None:
-            self.save_path = os.path.join(os.path.expanduser('~/Documents/NOARK/data'), self._hid)
-            self.csv_writer = csv.writer(open(os.path.join(self.save_path, datetime.now().strftime("%Y_%m_%d_%H_%M_%S") +'_data.csv'), 'w'))
-            
+            self.save_path = os.path.join(
+                os.path.expanduser("~/Documents/NOARK/data"), self._hid
+            )
+            self.csv_writer = csv.writer(
+                open(
+                    os.path.join(
+                        self.save_path,
+                        datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_data.csv",
+                    ),
+                    "w",
+                )
+            )
+
     def run(self):
         while True:
             self.process_frame()
@@ -296,5 +315,5 @@ if __name__ == "__main__":
     CAMERA_CALIB_PATH = (
         r"E:\CMC\pyprojects\programs_rpi\rpi_python\calib_mono_1200_800.toml"
     )
-    main = MainClass(cam_calib_path=CAMERA_CALIB_PATH, udp_stream=True)
+    main = MainClass(cam_calib_path=CAMERA_CALIB_PATH, udp_stream=False)
     main.run()
