@@ -197,12 +197,13 @@ class MainClass:
 
         return np.nanmean(_transformed, axis=0).flatten()
 
-    def _get_local_coordinates(self, ids, first_rvecs, first_tvecs, centroid):
-        ids = np.array(ids).flatten()
-        first_tvecs = np.array(first_tvecs).reshape(len(ids), 3)
-        first_rvecs = np.array(first_rvecs).reshape(len(ids), 3)
+    def _get_local_coordinates(self, first_id, first_rvecs, first_tvecs, centroid):
+        
+        first_id = np.array(first_id).flatten()
+        first_tvecs = np.array(first_tvecs).reshape(len(first_id), 3)
+        first_rvecs = np.array(first_rvecs).reshape(len(first_id), 3)
 
-        _id = ids[0]
+        _id = first_id[0]
         _r = cv2.Rodrigues(first_rvecs[0])[0]
         _t = first_tvecs[0]
 
@@ -245,12 +246,13 @@ class MainClass:
             self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
             rvecs, tvecs = self.estimate_pose(corners)
             if self.first_frame:
+                self.first_id = ids
                 self.first_rvec, self.first_tvec = rvecs, tvecs
                 self.first_frame = False
             self._draw_axes(rvecs, tvecs)
             _centroid = self._get_centroid(ids, rvecs, tvecs)
             _local_coordinates = self._get_local_coordinates(
-                ids, self.first_rvec, self.first_tvec, _centroid
+                self.first_id, self.first_rvec, self.first_tvec, _centroid
             )
 
             _local_coordinates = self.filter.update(_local_coordinates)
@@ -311,9 +313,12 @@ class MainClass:
 
 
 if __name__ == "__main__":
-    CAMERA_CALIB_PATH = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
-    CAMERA_CALIB_PATH = (
-        r"E:\CMC\pyprojects\programs_rpi\rpi_python\calib_mono_1200_800.toml"
-    )
-    main = MainClass(cam_calib_path=CAMERA_CALIB_PATH, udp_stream=False)
+    
+    if platform.system() == "Linux":
+        CAMERA_CALIB_PATH = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
+    else:
+        CAMERA_CALIB_PATH = (
+            r"E:\CMC\pyprojects\programs_rpi\rpi_python\webcam_calib.toml"
+        )
+    main = MainClass(cam_calib_path=CAMERA_CALIB_PATH, udp_stream=True)
     main.run()
