@@ -26,6 +26,13 @@ class Config:
         14: np.array([0.00, 0.031, -0.1075]),
         20: np.array([0.054, 0.031, -0.069]),
     }
+    MARKER_OFFSETS = {
+        4: np.array([0.00, 0.1, -0.069]),
+        8: np.array([0.00, 0.01, -0.069]),
+        12: np.array([0.00, 0.0, -0.1075]),
+        14: np.array([-0.09, 0.0, -0.069]),
+        20: np.array([0.1, 0.0, -0.069]),
+    }
 
 
 class MainClass:
@@ -117,7 +124,7 @@ class MainClass:
     def _init_udp_socket(self):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind((Config.UDP_IP, Config.UDP_PORT))
-        self.udp_socket.settimeout(5)
+        self.udp_socket.settimeout(7)
         print("UDP socket initialized:", self.udp_socket.getsockname())
 
     def estimate_pose(self, corners):
@@ -210,7 +217,11 @@ class MainClass:
         _local_camera_t = _r @ Config.MARKER_OFFSETS[_id].reshape(3, 1) + _t.reshape(
             3, 1
         )
+
+        # _local_camera_t = _r.T @ _t.reshape(3,1)
+
         _local_camera_t = _local_camera_t.T[0]
+        # _local_camera_t = first_tvecs[0].flatten()
         _local_coordinates = _r.T @ (_local_camera_t - centroid).reshape(3, 1)
         return _local_coordinates.T[0]
 
@@ -235,6 +246,7 @@ class MainClass:
             self.video_frame = cv2.remap(
                 self.video_frame, self.map1, self.map2, interpolation=cv2.INTER_LINEAR
             )
+            self.video_frame = cv2.flip(self.video_frame, 1)
         else:
             ret, self.video_frame = self.camera.read()
 
