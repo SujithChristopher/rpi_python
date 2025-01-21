@@ -17,7 +17,7 @@ picam2 = Picamera2()
 WIDTH = frame_size[0]
 HEIGHT = frame_size[1]
 main = {"format": "YUV420", "size": (WIDTH, HEIGHT)}
-_c = {"FrameRate": 100, "ExposureTime": 1000}
+_c = {"FrameRate": 100, "ExposureTime": 3000}
 config = picam2.create_video_configuration(
     main, controls=_c, transform=libcamera.Transform(vflip=1)
 )
