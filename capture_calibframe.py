@@ -9,7 +9,7 @@ from filters import ExponentialMovingAverageFilter3D
 import struct
 import csv
 from datetime import datetime
-# from rpy_helper import rtime
+
 
 class Config:
     FRAME_SIZE = (1200, 800)
@@ -63,8 +63,6 @@ class MainClass:
         self.record = False
 
         self.received_message = ""
-        
-        self._curr_session = os.path.join('Session-' + datetime.today().strftime('%Y-%m-%d'), 'MovementData')
 
         if platform.system() == "Linux":
             self._init_rpi_camera()
@@ -285,9 +283,6 @@ class MainClass:
                 elif self.received_message.startswith(b"CHANGE:"):
                     self.save_path = None
                     self._hid = self.received_message.decode("utf-8").split(":")[1]
-                    
-
-                    
                     self._select_hospitalid()
                     self._send_coordinates("START", _local_coordinates)
                     self.record = True
@@ -298,7 +293,7 @@ class MainClass:
                     self._send_coordinates("START", _local_coordinates)
 
                 if self.record:
-                    self.csv_writer.writerow([[datetime.now().strftime("%d/%m/%Y %H:%M:%S"),*_local_coordinates]])
+                    self.csv_writer.writerow([_local_coordinates])
 
         self.video_frame = cv2.resize(self.video_frame, (350, 200))
         cv2.imshow("frame", self.video_frame)
@@ -307,11 +302,8 @@ class MainClass:
         # TODO: Implement hospital id selection
         if self.save_path is None:
             self.save_path = os.path.join(
-                os.path.expanduser("~/Documents/NOARK/data"), self._hid, self._curr_session
+                os.path.expanduser("~/Documents/NOARK/data"), self._hid
             )
-            if not os.path.exists(self.save_path):
-                os.makedirs(self.save_path)
-            
             self.csv_writer = csv.writer(
                 open(
                     os.path.join(
@@ -321,7 +313,6 @@ class MainClass:
                     "w",
                 )
             )
-            self.csv_writer.writerow(["Time", "X", "Y", "Z"])
 
     def run(self):
         while True:
