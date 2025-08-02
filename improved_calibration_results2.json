@@ -1,0 +1,644 @@
+{
+  "cross_validation": {
+    "cv_results": [
+      {
+        "fold": 0,
+        "train_error": 0.2157591164331712,
+        "val_error": 159.9372655736702,
+        "overfitting": 159.72150645723704
+      },
+      {
+        "fold": 1,
+        "train_error": 0.20188647460181255,
+        "val_error": 158.22674654402124,
+        "overfitting": 158.02486006941942
+      },
+      {
+        "fold": 2,
+        "train_error": 0.1974722275434377,
+        "val_error": 157.39368135400943,
+        "overfitting": 157.196209126466
+      },
+      {
+        "fold": 3,
+        "train_error": 0.21553188681691435,
+        "val_error": 159.90492376945596,
+        "overfitting": 159.68939188263906
+      },
+      {
+        "fold": 4,
+        "train_error": 0.21552694006507145,
+        "val_error": 156.56901741030543,
+        "overfitting": 156.35349047024036
+      }
+    ],
+    "mean_val_error": 158.40632693029247,
+    "mean_overfitting": 158.19709160120038
+  },
+  "calibration_evaluation": {
+    "best_calibration": {
+      "mean_position_error": 0.0,
+      "max_position_error": 0.0,
+      "position_errors": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "reprojection_error": 0.16917853172355515,
+      "calibration_id": 0
+    },
+    "best_calibration_id": 0,
+    "all_results": [
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.16917853172355515,
+        "calibration_id": 0
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18120947284079372,
+        "calibration_id": 1
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18442285224578692,
+        "calibration_id": 2
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.1802281802599694,
+        "calibration_id": 3
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17667678920254354,
+        "calibration_id": 4
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18188052078765876,
+        "calibration_id": 5
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17425032538318347,
+        "calibration_id": 6
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17880167347926382,
+        "calibration_id": 7
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17983017625916564,
+        "calibration_id": 8
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17649541206583585,
+        "calibration_id": 9
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17784467295795864,
+        "calibration_id": 10
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18990285671878063,
+        "calibration_id": 11
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18284155440148936,
+        "calibration_id": 12
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.16972306729918912,
+        "calibration_id": 13
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.47998060156662986,
+        "calibration_id": 14
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18317349253851878,
+        "calibration_id": 15
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.1818185484129789,
+        "calibration_id": 16
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18467073822855878,
+        "calibration_id": 17
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17001206112784614,
+        "calibration_id": 18
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18200356167868215,
+        "calibration_id": 19
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.1858991298920451,
+        "calibration_id": 20
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.4876282960330108,
+        "calibration_id": 21
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18063329765694228,
+        "calibration_id": 22
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.1842409989871194,
+        "calibration_id": 23
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18517566954937337,
+        "calibration_id": 24
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17890696047210122,
+        "calibration_id": 25
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.1834488944369022,
+        "calibration_id": 26
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18510559979212443,
+        "calibration_id": 27
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18953567523514023,
+        "calibration_id": 28
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.17868570844472192,
+        "calibration_id": 29
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.1879524106242064,
+        "calibration_id": 30
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.18785951584364152,
+        "calibration_id": 31
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.2437269267617491,
+        "calibration_id": 32
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175098,
+        "calibration_id": 33
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175084,
+        "calibration_id": 34
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.2437269267617522,
+        "calibration_id": 35
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676174812,
+        "calibration_id": 36
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.2437269267617479,
+        "calibration_id": 37
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676174632,
+        "calibration_id": 38
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.2437269267617464,
+        "calibration_id": 39
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175098,
+        "calibration_id": 40
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175164,
+        "calibration_id": 41
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676174987,
+        "calibration_id": 42
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175087,
+        "calibration_id": 43
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175248,
+        "calibration_id": 44
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.2437269267617461,
+        "calibration_id": 45
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676174576,
+        "calibration_id": 46
+      },
+      {
+        "mean_position_error": 0.0,
+        "max_position_error": 0.0,
+        "position_errors": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reprojection_error": 0.24372692676175214,
+        "calibration_id": 47
+      }
+    ],
+    "mean_error_distribution": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "reprojection_vs_pose_correlation": NaN
+  },
+  "best_calibration": {
+    "mean_position_error": 0.0,
+    "max_position_error": 0.0,
+    "position_errors": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "reprojection_error": 0.16917853172355515,
+    "calibration_id": 0
+  }
+}
