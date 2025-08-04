@@ -90,3 +90,5 @@ port = 12345
 ## Memories
 
 - Added memory: This is a placeholder for adding new memories or notes about the project development process.
+- Added to memory: Understanding the workflow for adding new memories to the project documentation.
+- Added memory: Placeholder memory for general project insights.
