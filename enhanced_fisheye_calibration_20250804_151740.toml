@@ -1,0 +1,45 @@
+[calibration]
+camera_matrix = [ [ 583.2923095285507, 0.0, 653.1880213252552,], [ 0.0, 587.2985582864299, 334.79445234967375,], [ 0.0, 0.0, 1.0,],]
+dist_coeffs = [ [ -0.03693172844551851,], [ -0.0015037510729192939,], [ 0.010308314242745878,], [ -0.012631171735833243,],]
+reprojection_error = 0.17729907530283856
+success_rate = 1.0
+mean_pose_error = 0.25811684131622314
+
+[pose]
+human_pose = false
+marker_pose = true
+
+[aruco]
+marker_length = 0.05
+marker_spacing = 0.01
+
+[camera]
+resolution = [ 1200, 800,]
+
+[stream_data]
+udp = false
+ip = "localhost"
+port = 12345
+
+[display]
+display = false
+
+[rom]
+angle = 45
+distance = 50
+
+[advanced_features]
+adaptive_selection = true
+multi_scale = true
+ransac = true
+bundle_adjustment = false
+cross_validation = true
+temperature_selection = false
+cache_undistortion = true
+adaptive_aruco = false
+fisheye_refinement = true
+
+[calibration.region_performance]
+center = 0.0
+mid = 1.0
+periphery = 0.0

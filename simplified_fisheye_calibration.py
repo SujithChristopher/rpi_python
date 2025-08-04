@@ -395,8 +395,8 @@ def main():
     
     # Paths - update these for your system
     base_path = os.path.dirname(os.path.abspath(__file__))
-    calib_video_path = os.path.join(base_path, "data", "recordings_160fov", "calib_mono_160fov2", "webcam_color.msgpack")
-    april_data_path = os.path.join(base_path, "data", "recordings_160fov", "3marker_complete_data", "3marker_april_mono_160fov_3", "webcam_color.msgpack")
+    calib_video_path = os.path.join(base_path, "data", "calibration", '160_fov',"calib_mono_160fov_raw", "webcam_color.msgpack")
+    april_data_path = os.path.join(base_path, "data", 'recordings',"160_fov", "3marker_complete_data", "3marker_april_mono_160fov_3", "webcam_color.msgpack")
     
     # Check files exist
     if not os.path.exists(calib_video_path):
@@ -411,7 +411,7 @@ def main():
         return
     
     # Step 2: Generate multiple calibrations
-    my_dict = calibrator.generate_calibrations(chessb_corners, n_calibrations=100)
+    my_dict = calibrator.generate_calibrations(chessb_corners, n_calibrations=1000)
     
     if len(my_dict["mat"]) == 0:
         logger.error("No valid calibrations generated")
@@ -429,8 +429,9 @@ def main():
         
         if best_calibration:
             # Save to TOML
-            output_path = "optimized_fisheye_calibration.toml"
+            output_path = "optimized_fisheye_calibration123.toml"
             calibrator.save_calibration_toml(best_calibration, output_path)
+            print('hi')
         
     else:
         logger.warning(f"April tag data not found: {april_data_path}")
