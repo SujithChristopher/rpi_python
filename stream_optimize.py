@@ -103,7 +103,7 @@ class MainClass:
         self.picam2.start()
 
         # Load fisheye calibration
-        fish_params = toml.load("/home/sujith/Documents/programs/undistort_best.toml")
+        fish_params = toml.load("/home/sujith/Documents/rpi_python/undistort_best.toml")
         fish_matrix = np.array(fish_params["calibration"]["camera_matrix"]).reshape(
             3, 3
         )
@@ -126,7 +126,7 @@ class MainClass:
     def _init_udp_socket(self):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind((Config.UDP_IP, Config.UDP_PORT))
-        self.udp_socket.settimeout(7)
+        self.udp_socket.setblocking(False)  # This line - make it non-blocking
         print("UDP socket initialized:", self.udp_socket.getsockname())
 
     def estimate_pose(self, corners):
@@ -240,29 +240,37 @@ class MainClass:
         _data_bytes = struct.pack("f" * len(_transformed), *_transformed)
         self.udp_socket.sendto(_data_bytes, self.addr)
 
+
     def process_frame(self):
-        # Capture frame
+    # Capture frame
         ret = None
         if platform.system() == "Linux":
             self.video_frame = self.picam2.capture_array()
             self.video_frame = cv2.remap(
-                self.video_frame, self.map1, self.map2, interpolation=cv2.INTER_LINEAR
+                 self.video_frame, self.map1, self.map2, interpolation=cv2.INTER_LINEAR
             )
             self.video_frame = cv2.flip(self.video_frame, 1)
         else:
             ret, self.video_frame = self.camera.read()
 
         if self.video_frame is None or ret is False:
-            return
+             return
+
+         # Move UDP communication here - BEFORE ArUco detection
+        if self.udp_stream:
+             try:
+                self.received_message, self.addr = self.udp_socket.recvfrom(30)
+             except socket.error:
+                pass
 
         corners, ids, _ = self.detector.detectMarkers(self.video_frame)
         if ids is not None:
             self.video_frame = aruco.drawDetectedMarkers(self.video_frame, corners, ids)
             rvecs, tvecs = self.estimate_pose(corners)
             if self.first_frame:
-                self.first_id = ids
-                self.first_rvec, self.first_tvec = rvecs, tvecs
-                self.first_frame = False
+               self.first_id = ids
+               self.first_rvec, self.first_tvec = rvecs, tvecs
+               self.first_frame = False
             self._draw_axes(rvecs, tvecs)
             _centroid = self._get_centroid(ids, rvecs, tvecs)
             _local_coordinates = self._get_local_coordinates(
@@ -270,9 +278,9 @@ class MainClass:
             )
 
             _local_coordinates = self.filter.update(_local_coordinates)
-            # print(_local_coordinates)
-            if self.udp_stream:
-                self.received_message, self.addr = self.udp_socket.recvfrom(30)
+
+        # Handle received messages here
+            if hasattr(self, 'received_message') and self.received_message:
                 if self.received_message == b"STOP":
                     self._send_coordinates("STOP", _local_coordinates)
                 elif self.received_message.startswith(b"USER:"):
@@ -281,17 +289,12 @@ class MainClass:
                         self._select_hospitalid()
                     self._send_coordinates("START", _local_coordinates)
                     self.record = True
-
                 elif self.received_message.startswith(b"CHANGE:"):
                     self.save_path = None
                     self._hid = self.received_message.decode("utf-8").split(":")[1]
-                    
-
-                    
                     self._select_hospitalid()
                     self._send_coordinates("START", _local_coordinates)
                     self.record = True
-
                 elif self.received_message == b"RESET":
                     self._send_coordinates("RESET", _local_coordinates)
                 else:
@@ -323,20 +326,49 @@ class MainClass:
             )
             self.csv_writer.writerow(["Time", "X", "Y", "Z"])
 
+    # def run(self):
+    #     while True:
+    #         self.process_frame()
+    #         if self.received_message == b"STOP":
+    #             break
+    #         if cv2.waitKey(1) & 0xFF == ord("q"):
+    #             break
+    #     cv2.destroyAllWindows()
+
     def run(self):
+        import time
+        last_heartbeat = time.time()
+    
         while True:
-            self.process_frame()
+            try:
+               self.process_frame()
+            
+            # If we successfully received a message, update heartbeat
+               if hasattr(self, 'received_message') and self.received_message:
+                 last_heartbeat = time.time()
+            
+            # If no communication for 3 seconds, Godot probably closed
+               if time.time() - last_heartbeat > 3.0:
+                   print("Lost connection to Godot, exiting...")
+                   break
+                
+            except:
+            # Any network error means Godot is gone
+               print("Network error, Godot closed...")
+               break
+            
             if self.received_message == b"STOP":
                 break
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
+            
         cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
     
     if platform.system() == "Linux":
-        CAMERA_CALIB_PATH = "/home/sujith/Documents/programs/calib_mono_faith3D.toml"
+        CAMERA_CALIB_PATH = "/home/sujith/Documents/rpi_python/old_calibration/calib_mono_faith3D.toml"
     else:
         CAMERA_CALIB_PATH = (
             r"E:\CMC\pyprojects\programs_rpi\rpi_python\webcam_calib.toml"
