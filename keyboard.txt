@@ -1,0 +1,26 @@
+# Install keyboard from GitHub
+pip install git+https://github.com/boppreh/keyboard.git#egg=keyboard
+
+# Add current user to tty and input groups
+sudo usermod -a -G tty,input $USER
+
+# Set permissions for /dev/uinput
+sudo chmod 0666 /dev/uinput
+
+# Create udev rules
+echo 'KERNEL=="uinput", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/50-uinput.rules
+echo 'SUBSYSTEM=="input", MODE="0666", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/12-input.rules
+echo 'SUBSYSTEM=="misc", MODE="0666", GROUP="plugdev"' | sudo tee -a /etc/udev/rules.d/12-input.rules
+echo 'SUBSYSTEM=="tty", MODE="0666", GROUP="plugdev"' | sudo tee -a /etc/udev/rules.d/12-input.rules
+
+# Restart session so group changes take effect
+loginctl terminate-user $USER
+
+
+# Create venv
+ 
+ python3.11 -m venv venv --system-site-packages 
+
+ # Activate venv(linux/macos)
+
+ source venv/bin/activate 

@@ -1,0 +1,10 @@
+numpy==1.26.4
+toml
+scipy
+opencv-contrib-python
+opencv-python
+msgpack
+msgpack-numpy
+mediapipe
+matplotlib
+picamera2
