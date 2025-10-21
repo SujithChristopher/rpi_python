@@ -981,7 +981,7 @@ def main():
         use_adaptive_selection=True,      # Intelligent sample selection
         use_multi_scale=True,            # Region-based weighting
         use_ransac=True,                 # RANSAC robust estimation
-        use_bundle_adjustment=True,      # Bundle adjustment refinement (slower)
+        use_bundle_adjustment=False,      # Bundle adjustment refinement (slower)
         use_cross_validation=True,        # Cross-validation evaluation
         use_temperature_selection=True,  # Simulated annealing selection
         cache_undistortion_maps=True,     # Cache for performance
