@@ -467,9 +467,6 @@ class MainClass:
             print(f"Recording to: {filename}")
 
     def run(self):
-        import time
-        last_heartbeat = time.time()
-
         print("Starting stream...")
         print("Waiting for commands from Godot...")
 
@@ -477,18 +474,9 @@ class MainClass:
             try:
                 result = self.process_frame()
 
-                # Update heartbeat if we received a message
-                if hasattr(self, 'received_message') and self.received_message:
-                    last_heartbeat = time.time()
-
                 # Check for STOP command
                 if result == "STOP":
                     print("Stopping stream...")
-                    break
-
-                # Heartbeat timeout (only if UDP is enabled)
-                if self.udp_stream and time.time() - last_heartbeat > 5.0:
-                    print("Lost connection to Godot, exiting...")
                     break
 
             except KeyboardInterrupt:
