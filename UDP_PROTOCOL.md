@@ -43,7 +43,9 @@ All commands are sent as ASCII bytes.
 
 | Command | Description | Valid States | Next State |
 |---------|-------------|--------------|------------|
-| `CAPTURE_REF` | Capture current pose as reference frame | IDLE, REFERENCE_CAPTURED | REFERENCE_CAPTURED |
+| `CAPTURE_REF` | Capture current pose as reference frame (auto-saves to disk) | IDLE, REFERENCE_CAPTURED | REFERENCE_CAPTURED |
+| `SAVE_REF` | Manually save current reference frame to disk | REFERENCE_CAPTURED, TRACKING, RECORDING | (no change) |
+| `LOAD_REF` | Load previously saved reference frame from disk | IDLE | REFERENCE_CAPTURED |
 | `RESET_REF` | Clear reference frame and return to IDLE | Any | IDLE |
 | `START_TRACK` | Start tracking (requires reference) | REFERENCE_CAPTURED | TRACKING |
 | `STOP_TRACK` | Stop tracking | TRACKING, RECORDING | REFERENCE_CAPTURED |
@@ -57,8 +59,9 @@ All commands are sent as ASCII bytes.
 | `USER:<id>` | `USER:patient123` | Set hospital ID and start recording | REFERENCE_CAPTURED, TRACKING | RECORDING |
 | `CHANGE:<id>` | `CHANGE:patient456` | Change to new user/close previous file | RECORDING | RECORDING |
 
-### Example Command Sequence
+### Example Command Sequences
 
+#### First Time Setup (One-Time Calibration)
 ```python
 # Godot sends commands as bytes
 import socket
@@ -66,20 +69,38 @@ import socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 python_address = ("localhost", 8000)
 
-# 1. Capture reference frame when patient is in starting position
-sock.sendto(b"CAPTURE_REF", python_address)
+# Position patient at starting point, then:
+sock.sendto(b"CAPTURE_REF", python_address)  # Saves to disk automatically
 
-# 2. Start tracking
+# Now you can start tracking
 sock.sendto(b"START_TRACK", python_address)
+sock.sendto(b"USER:patient_001", python_address)
+```
 
-# 3. Start recording with patient ID
+#### Daily Usage (Reference Auto-Loaded)
+```python
+# The reference frame is automatically loaded when the program starts!
+# You can start tracking immediately:
+
+sock.sendto(b"START_TRACK", python_address)  # Uses saved reference
 sock.sendto(b"USER:patient_001", python_address)
 
-# 4. Stop recording but keep tracking
+# ... patient exercises ...
+
 sock.sendto(b"STOP_TRACK", python_address)
 
-# 5. Reset for next patient
-sock.sendto(b"RESET_REF", python_address)
+# Next patient
+sock.sendto(b"START_TRACK", python_address)
+sock.sendto(b"USER:patient_002", python_address)
+```
+
+#### Recalibrating (Changing Starting Position)
+```python
+# If you need to change the reference position:
+sock.sendto(b"CAPTURE_REF", python_address)  # Overwrites old reference
+
+# Continue as normal
+sock.sendto(b"START_TRACK", python_address)
 ```
 
 ## Responses (Python → Godot)
@@ -188,35 +209,60 @@ send("STOP_TRACK")
 send("RESET_REF")
 ```
 
+## Reference Frame Storage
+
+### Automatic Behavior
+
+**Reference frames are persistent across program restarts:**
+
+1. **When you send `CAPTURE_REF`**: The reference frame is automatically saved to disk
+2. **When the program starts**: It automatically loads the saved reference frame if it exists
+3. **Result**: You only need to capture the reference frame once, and it will be used for all future sessions
+
+### Storage Location
+
+Reference frames are automatically saved to:
+- **Windows**: `C:\Users\<username>\Documents\NOARK\reference_frames\reference_frame.json`
+- **Linux (RPi)**: `/home/<username>/Documents/NOARK/reference_frames/reference_frame.json`
+
+### File Format
+
+```json
+{
+  "ids": [[12], [88], [89]],
+  "rvecs": [[0.123, -0.456, 0.789], ...],
+  "tvecs": [[0.012, 0.034, 0.567], ...],
+  "timestamp": "2025-10-21 14:30:45"
+}
+```
+
+### When to Use Each Command
+
+- **CAPTURE_REF**: Use when you want to set a NEW reference position (overwrites saved reference)
+- **LOAD_REF**: Manually reload from disk (rarely needed since it auto-loads on startup)
+- **SAVE_REF**: Manually save current reference (rarely needed since CAPTURE_REF auto-saves)
+
+**Typical workflow:**
+1. First time setup: Send `CAPTURE_REF` to set the starting position
+2. From then on: Just start the program and it will use the saved reference automatically
+3. If you need to change the starting position: Send `CAPTURE_REF` again
+
 ## Error Handling
 
 ### Common Errors
 
 1. **"Cannot start tracking without reference frame"**
-   - Cause: Tried `START_TRACK` or `USER:` before `CAPTURE_REF`
-   - Solution: Send `CAPTURE_REF` first
+   - Cause: Tried `START_TRACK` or `USER:` before `CAPTURE_REF` or `LOAD_REF`
+   - Solution: Send `CAPTURE_REF` or `LOAD_REF` first
 
 2. **"No markers detected, cannot capture reference frame"**
    - Cause: No ArUco markers visible when `CAPTURE_REF` was sent
    - Solution: Ensure markers are visible in camera view
 
-3. **"Lost connection to Godot, exiting..."**
-   - Cause: No UDP messages received for 5 seconds
-   - Solution: Send periodic heartbeat (e.g., `STATUS`) every 2-3 seconds
+3. **"No saved reference frame found"**
+   - Cause: Tried `LOAD_REF` but no saved reference frame exists
+   - Solution: Use `CAPTURE_REF` first to create a reference frame
 
-### Heartbeat Pattern
-
-To prevent timeout, send periodic status checks:
-
-```gdscript
-var heartbeat_timer := 0.0
-
-func _process(delta):
-    heartbeat_timer += delta
-    if heartbeat_timer > 2.0:  # Every 2 seconds
-        send_command("STATUS")
-        heartbeat_timer = 0.0
-```
 
 ## Visual Feedback
 

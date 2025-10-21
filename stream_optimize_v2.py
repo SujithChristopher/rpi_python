@@ -9,6 +9,8 @@ from filters import ExponentialMovingAverageFilter3D
 import struct
 import csv
 from datetime import datetime
+import json
+from pathlib import Path
 
 
 class Config:
@@ -52,6 +54,14 @@ class MainClass:
         ).reshape(3, 3)
         self.distortion_coeff = np.array(calib_data["calibration"]["dist_coeffs"])
 
+        # Setup reference frame storage path
+        if platform.system() == "Linux":
+            self.ref_frame_path = Path.home() / "Documents" / "NOARK" / "reference_frames"
+        else:
+            self.ref_frame_path = Path.home() / "Documents" / "NOARK" / "reference_frames"
+        self.ref_frame_path.mkdir(parents=True, exist_ok=True)
+        self.ref_frame_file = self.ref_frame_path / "reference_frame.json"
+
         self.detector = self._init_detector()
         self.board = self._init_board()
 
@@ -83,6 +93,11 @@ class MainClass:
 
         if self.udp_stream:
             self._init_udp_socket()
+
+        # Auto-load saved reference frame if it exists
+        if self.ref_frame_file.exists():
+            print(f"\nFound saved reference frame, loading...")
+            self._load_reference_frame()
 
     def _init_detector(self):
         aruco_params = aruco.DetectorParameters()
@@ -138,8 +153,11 @@ class MainClass:
         self.udp_socket.bind((Config.UDP_IP, Config.UDP_PORT))
         self.udp_socket.setblocking(False)
         print(f"UDP socket initialized: {self.udp_socket.getsockname()}")
+        print(f"Reference frames stored in: {self.ref_frame_path}")
         print("\n=== UDP Command Reference ===")
-        print("CAPTURE_REF    - Capture current pose as reference frame")
+        print("CAPTURE_REF    - Capture current pose as reference frame (auto-saves)")
+        print("SAVE_REF       - Save current reference frame to disk")
+        print("LOAD_REF       - Load saved reference frame from disk")
         print("RESET_REF      - Clear reference frame and return to IDLE")
         print("START_TRACK    - Start tracking (requires reference frame)")
         print("STOP_TRACK     - Stop tracking")
@@ -241,7 +259,52 @@ class MainClass:
         _data_bytes = struct.pack("f" * len(_data), *_data)
         self.udp_socket.sendto(_data_bytes, self.addr)
 
-    def _capture_reference_frame(self, ids, rvecs, tvecs):
+    def _save_reference_frame(self):
+        """Save reference frame to disk"""
+        if not self.reference_captured:
+            print("ERROR: No reference frame to save")
+            return False
+
+        ref_data = {
+            'ids': self.first_id.tolist(),
+            'rvecs': self.first_rvec.tolist(),
+            'tvecs': self.first_tvec.tolist(),
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        with open(self.ref_frame_file, 'w') as f:
+            json.dump(ref_data, f, indent=2)
+
+        print(f"Reference frame saved to: {self.ref_frame_file}")
+        return True
+
+    def _load_reference_frame(self):
+        """Load reference frame from disk"""
+        if not self.ref_frame_file.exists():
+            print(f"No saved reference frame found at: {self.ref_frame_file}")
+            return False
+
+        try:
+            with open(self.ref_frame_file, 'r') as f:
+                ref_data = json.load(f)
+
+            self.first_id = np.array(ref_data['ids'])
+            self.first_rvec = np.array(ref_data['rvecs'])
+            self.first_tvec = np.array(ref_data['tvecs'])
+            self.reference_captured = True
+            self.state = StreamState.REFERENCE_CAPTURED
+
+            print(f"Reference frame loaded from: {self.ref_frame_file}")
+            print(f"Markers: {self.first_id.flatten()}")
+            print(f"Timestamp: {ref_data.get('timestamp', 'Unknown')}")
+            self._send_message("REFERENCE_CAPTURED")
+            return True
+
+        except Exception as e:
+            print(f"ERROR loading reference frame: {e}")
+            return False
+
+    def _capture_reference_frame(self, ids, rvecs, tvecs, auto_save=True):
         """Capture current frame as reference for coordinate system"""
         if ids is not None and len(ids) > 0:
             self.first_id = ids
@@ -250,6 +313,11 @@ class MainClass:
             self.reference_captured = True
             self.state = StreamState.REFERENCE_CAPTURED
             print(f"Reference frame captured with markers: {ids.flatten()}")
+
+            # Auto-save to disk
+            if auto_save:
+                self._save_reference_frame()
+
             self._send_message("REFERENCE_CAPTURED")
             return True
         else:
@@ -279,6 +347,14 @@ class MainClass:
         try:
             if message == b"CAPTURE_REF":
                 return self._capture_reference_frame(ids, rvecs, tvecs)
+
+            elif message == b"SAVE_REF":
+                self._save_reference_frame()
+                return None
+
+            elif message == b"LOAD_REF":
+                self._load_reference_frame()
+                return None
 
             elif message == b"RESET_REF":
                 self._reset_reference_frame()
