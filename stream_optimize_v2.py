@@ -96,7 +96,6 @@ class MainClass:
 
         # Auto-load saved reference frame if it exists
         if self.ref_frame_file.exists():
-            print(f"\nFound saved reference frame, loading...")
             self._load_reference_frame()
 
     def _init_detector(self):
@@ -152,20 +151,7 @@ class MainClass:
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind((Config.UDP_IP, Config.UDP_PORT))
         self.udp_socket.setblocking(False)
-        print(f"UDP socket initialized: {self.udp_socket.getsockname()}")
-        print(f"Reference frames stored in: {self.ref_frame_path}")
-        print("\n=== UDP Command Reference ===")
-        print("CAPTURE_REF    - Capture current pose as reference frame (auto-saves)")
-        print("SAVE_REF       - Save current reference frame to disk")
-        print("LOAD_REF       - Load saved reference frame from disk")
-        print("RESET_REF      - Clear reference frame and return to IDLE")
-        print("START_TRACK    - Start tracking (requires reference frame)")
-        print("STOP_TRACK     - Stop tracking")
-        print("USER:<id>      - Set hospital ID and start recording")
-        print("CHANGE:<id>    - Change hospital ID")
-        print("STOP           - Stop everything and exit")
-        print("STATUS         - Request current state")
-        print("=============================\n")
+        print(f"UDP: {self.udp_socket.getsockname()}")
 
     def estimate_pose(self, corners):
         marker_points = np.array(
@@ -262,7 +248,6 @@ class MainClass:
     def _save_reference_frame(self):
         """Save reference frame to disk"""
         if not self.reference_captured:
-            print("ERROR: No reference frame to save")
             return False
 
         ref_data = {
@@ -275,13 +260,12 @@ class MainClass:
         with open(self.ref_frame_file, 'w') as f:
             json.dump(ref_data, f, indent=2)
 
-        print(f"Reference frame saved to: {self.ref_frame_file}")
+        print(f"REF SAVED")
         return True
 
     def _load_reference_frame(self):
         """Load reference frame from disk"""
         if not self.ref_frame_file.exists():
-            print(f"No saved reference frame found at: {self.ref_frame_file}")
             return False
 
         try:
@@ -294,14 +278,12 @@ class MainClass:
             self.reference_captured = True
             self.state = StreamState.REFERENCE_CAPTURED
 
-            print(f"Reference frame loaded from: {self.ref_frame_file}")
-            print(f"Markers: {self.first_id.flatten()}")
-            print(f"Timestamp: {ref_data.get('timestamp', 'Unknown')}")
+            print(f"REF LOADED [{ref_data.get('timestamp', '')}]")
             self._send_message("REFERENCE_CAPTURED")
             return True
 
         except Exception as e:
-            print(f"ERROR loading reference frame: {e}")
+            print(f"ERR: {e}")
             return False
 
     def _capture_reference_frame(self, ids, rvecs, tvecs, auto_save=True):
@@ -312,7 +294,7 @@ class MainClass:
             self.first_tvec = tvecs
             self.reference_captured = True
             self.state = StreamState.REFERENCE_CAPTURED
-            print(f"Reference frame captured with markers: {ids.flatten()}")
+            print(f"REF CAPTURED: {ids.flatten()}")
 
             # Auto-save to disk
             if auto_save:
@@ -321,7 +303,7 @@ class MainClass:
             self._send_message("REFERENCE_CAPTURED")
             return True
         else:
-            print("ERROR: No markers detected, cannot capture reference frame")
+            print("ERR: No markers")
             self._send_message("ERROR")
             return False
 
@@ -333,7 +315,7 @@ class MainClass:
         self.reference_captured = False
         self.state = StreamState.IDLE
         self.filter = ExponentialMovingAverageFilter3D(alpha=Config.ALPHA)  # Reset filter
-        print("Reference frame reset")
+        print("REF RESET")
         self._send_message("IDLE")
 
     def _handle_udp_commands(self, ids, rvecs, tvecs):
@@ -363,10 +345,10 @@ class MainClass:
             elif message == b"START_TRACK":
                 if self.reference_captured:
                     self.state = StreamState.TRACKING
-                    print("Tracking started")
+                    print("TRACKING")
                     self._send_message("TRACKING")
                 else:
-                    print("ERROR: Cannot start tracking without reference frame")
+                    print("ERR: No ref")
                     self._send_message("ERROR")
                 return None
 
@@ -374,7 +356,7 @@ class MainClass:
                 if self.record:
                     self._stop_recording()
                 self.state = StreamState.REFERENCE_CAPTURED
-                print("Tracking stopped")
+                print("STOPPED")
                 self._send_message("REFERENCE_CAPTURED")
                 return None
 
@@ -385,10 +367,10 @@ class MainClass:
                         self._select_hospitalid()
                     self.state = StreamState.RECORDING
                     self.record = True
-                    print(f"Recording started for user: {self._hid}")
+                    print(f"REC: {self._hid}")
                     self._send_message("RECORDING")
                 else:
-                    print("ERROR: Cannot start recording without reference frame")
+                    print("ERR: No ref")
                     self._send_message("ERROR")
                 return None
 
@@ -399,32 +381,31 @@ class MainClass:
                     self._select_hospitalid()
                     self.state = StreamState.RECORDING
                     self.record = True
-                    print(f"Changed to user: {self._hid}")
+                    print(f"REC: {self._hid}")
                     self._send_message("RECORDING")
                 else:
-                    print("ERROR: Cannot change user without reference frame")
+                    print("ERR: No ref")
                     self._send_message("ERROR")
                 return None
 
             elif message == b"STATUS":
                 state_names = {
                     StreamState.IDLE: "IDLE",
-                    StreamState.REFERENCE_CAPTURED: "REFERENCE_CAPTURED",
-                    StreamState.TRACKING: "TRACKING",
-                    StreamState.RECORDING: "RECORDING"
+                    StreamState.REFERENCE_CAPTURED: "REF_CAP",
+                    StreamState.TRACKING: "TRACK",
+                    StreamState.RECORDING: "REC"
                 }
-                current_state = state_names.get(self.state, "UNKNOWN")
-                print(f"Current state: {current_state}, Reference: {self.reference_captured}")
+                current_state = state_names.get(self.state, "?")
                 self._send_message(current_state)
                 return None
 
             elif message == b"STOP":
-                print("Received STOP command")
+                print("STOP")
                 self._send_message("STOP")
                 return "STOP"
 
         except Exception as e:
-            print(f"Error handling command: {e}")
+            print(f"ERR: {e}")
             self._send_message("ERROR")
 
         return None
@@ -437,7 +418,7 @@ class MainClass:
             self.csv_writer = None
         self.record = False
         self.save_path = None
-        print("Recording stopped and file closed")
+        print("REC STOPPED")
 
     def _draw_status_overlay(self):
         """Draw status information on video frame"""
@@ -540,11 +521,9 @@ class MainClass:
             self.csv_file = open(filename, "w", newline='')
             self.csv_writer = csv.writer(self.csv_file)
             self.csv_writer.writerow(["Time", "X", "Y", "Z"])
-            print(f"Recording to: {filename}")
 
     def run(self):
-        print("Starting stream...")
-        print("Waiting for commands from Godot...")
+        print("READY")
 
         while True:
             try:
@@ -552,26 +531,21 @@ class MainClass:
 
                 # Check for STOP command
                 if result == "STOP":
-                    print("Stopping stream...")
                     break
 
             except KeyboardInterrupt:
-                print("\nKeyboard interrupt received, exiting...")
+                print("\nEXIT")
                 break
             except Exception as e:
-                print(f"Error in process_frame: {e}")
-                import traceback
-                traceback.print_exc()
+                print(f"ERR: {e}")
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
-                print("'q' pressed, exiting...")
                 break
 
         # Cleanup
         if self.csv_file is not None:
             self.csv_file.close()
         cv2.destroyAllWindows()
-        print("Stream stopped")
 
 
 if __name__ == "__main__":
