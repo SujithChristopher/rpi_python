@@ -18,7 +18,7 @@ class Config:
     UDP_IP = "localhost"
     UDP_PORT = 8000
     DEFAULT_IDS = [4, 8, 12, 14, 20]
-    ALPHA = 0.4  # Exponential moving average filter smoothing factor
+    ALPHA = 0.2  # Exponential moving average filter smoothing factor (lower = smoother)
     MARKER_OFFSETS = {
         4: np.array([0.00, 0.1, -0.069]),
         8: np.array([0.00, 0.01, -0.069]),
@@ -76,6 +76,7 @@ class MainClass:
 
         self.received_message = ""
         self.addr = None
+        self.auto_loaded_ref = False  # Flag to send notification after first connection
 
         if platform.system() == "Linux":
             self._init_rpi_camera()
@@ -88,6 +89,7 @@ class MainClass:
         # Auto-load saved reference frame if it exists
         if self.ref_frame_file.exists():
             self._load_reference_frame()
+            self.auto_loaded_ref = True
 
     def _init_detector(self):
         aruco_params = aruco.DetectorParameters()
@@ -270,7 +272,6 @@ class MainClass:
             self.state = StreamState.REFERENCE_CAPTURED
 
             print(f"REF LOADED [{ref_data.get('timestamp', '')}]")
-            self._send_message("REFERENCE_CAPTURED")
             return True
 
         except Exception as e:
@@ -336,7 +337,7 @@ class MainClass:
             elif message == b"START_TRACK":
                 if self.reference_captured:
                     self.state = StreamState.TRACKING
-                    print("TRACKING")
+                    # print("TRACKING")
                     self._send_message("TRACKING")
                 else:
                     print("ERR: No ref")
@@ -411,6 +412,10 @@ class MainClass:
         if self.udp_stream:
             try:
                 self.received_message, self.addr = self.udp_socket.recvfrom(30)
+                # Send auto-loaded reference frame notification on first connection
+                if self.auto_loaded_ref and self.addr is not None:
+                    # self._send_message("REFERENCE_CAPTURED")
+                    self.auto_loaded_ref = False  # Only send once
             except socket.error:
                 pass
 

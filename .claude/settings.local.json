@@ -3,7 +3,9 @@
     "allow": [
       "Bash(python:*)",
       "Bash(rm:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Read(//home/sujith/Downloads/NOARKGames/Main_screen/Scripts/**)",
+      "Read(//home/sujith/Documents/NOARK/reference_frames/**)"
     ],
     "deny": []
   }
