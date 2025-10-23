@@ -4,10 +4,8 @@ from cv2 import aruco
 import platform
 import socket
 import toml
-import os
 from filters import ExponentialMovingAverageFilter3D
 import struct
-import csv
 from datetime import datetime
 import json
 from pathlib import Path
@@ -76,15 +74,8 @@ class MainClass:
         self.first_rvec = None
         self.first_tvec = None
 
-        self.save_path = None
-        self.csv_writer = None
-        self.csv_file = None
-        self.record = False
-
         self.received_message = ""
         self.addr = None
-
-        self._curr_session = os.path.join('Session-' + datetime.today().strftime('%Y-%m-%d'), 'MovementData')
 
         if platform.system() == "Linux":
             self._init_rpi_camera()
@@ -353,40 +344,11 @@ class MainClass:
                 return None
 
             elif message == b"STOP_TRACK":
-                if self.record:
-                    self._stop_recording()
                 self.state = StreamState.REFERENCE_CAPTURED
                 print("STOPPED")
                 self._send_message("REFERENCE_CAPTURED")
                 return None
 
-            elif message.startswith(b"USER:"):
-                if self.reference_captured:
-                    self._hid = message.decode("utf-8").split(":")[1]
-                    if self.save_path is None:
-                        self._select_hospitalid()
-                    self.state = StreamState.RECORDING
-                    self.record = True
-                    print(f"REC: {self._hid}")
-                    self._send_message("RECORDING")
-                else:
-                    print("ERR: No ref")
-                    self._send_message("ERROR")
-                return None
-
-            elif message.startswith(b"CHANGE:"):
-                if self.reference_captured:
-                    self._stop_recording()
-                    self._hid = message.decode("utf-8").split(":")[1]
-                    self._select_hospitalid()
-                    self.state = StreamState.RECORDING
-                    self.record = True
-                    print(f"REC: {self._hid}")
-                    self._send_message("RECORDING")
-                else:
-                    print("ERR: No ref")
-                    self._send_message("ERROR")
-                return None
 
             elif message == b"STATUS":
                 state_names = {
@@ -409,16 +371,6 @@ class MainClass:
             self._send_message("ERROR")
 
         return None
-
-    def _stop_recording(self):
-        """Stop recording and close CSV file"""
-        if self.csv_file is not None:
-            self.csv_file.close()
-            self.csv_file = None
-            self.csv_writer = None
-        self.record = False
-        self.save_path = None
-        print("REC STOPPED")
 
     def _draw_status_overlay(self):
         """Draw status information on video frame"""
@@ -487,11 +439,6 @@ class MainClass:
                 state_msg = "RECORDING" if self.state == StreamState.RECORDING else "TRACKING"
                 self._send_message(state_msg, _local_coordinates)
 
-                # Record to CSV if in recording state
-                if self.record and self.csv_writer is not None:
-                    self.csv_writer.writerow([datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                                             *_local_coordinates])
-
         else:
             # No markers detected, still handle commands
             self._handle_udp_commands(None, None, None)
@@ -504,23 +451,6 @@ class MainClass:
         cv2.imshow("frame", self.video_frame)
 
         return None
-
-    def _select_hospitalid(self):
-        """Create directory and CSV file for recording"""
-        if self.save_path is None:
-            self.save_path = os.path.join(
-                os.path.expanduser("~/Documents/NOARK/data"), self._hid, self._curr_session
-            )
-            if not os.path.exists(self.save_path):
-                os.makedirs(self.save_path)
-
-            filename = os.path.join(
-                self.save_path,
-                datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_data.csv"
-            )
-            self.csv_file = open(filename, "w", newline='')
-            self.csv_writer = csv.writer(self.csv_file)
-            self.csv_writer.writerow(["Time", "X", "Y", "Z"])
 
     def run(self):
         print("READY")
@@ -543,8 +473,6 @@ class MainClass:
                 break
 
         # Cleanup
-        if self.csv_file is not None:
-            self.csv_file.close()
         cv2.destroyAllWindows()
 
 
