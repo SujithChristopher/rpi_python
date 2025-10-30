@@ -4,7 +4,10 @@
       "Bash(python:*)",
       "Bash(rm:*)",
       "Bash(git reset:*)",
-      "Bash(move /Y data_converted.json data.json:*)"
+      "Bash(move /Y data_converted.json data.json:*)",
+      "Read(//home/sujith/Downloads/NOARKGames/Main_screen/Scripts/**)",
+      "Read(//home/sujith/Documents/NOARK/reference_frames/**)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
