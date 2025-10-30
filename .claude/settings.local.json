@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python:*)",
       "Bash(rm:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(move /Y data_converted.json data.json:*)"
     ],
     "deny": []
   }
